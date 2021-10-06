@@ -14,74 +14,107 @@ product <- import("in/product.csv")
 # UI ----------------------------------------------------------------------
 
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("CPRD Codelist maker"),
-
-    # Sidebar with inputs
-    sidebarLayout(
-        sidebarPanel(
-            style = "position:fixed;width:23%;",
-            width=3,
-            tags$style(type='text/css', '#searchterms {white-space: pre-wrap;}'),
-            tags$style(type='text/css', '#exclusionterms {white-space: pre-wrap;}'),
-            tags$style(type='text/css', '#cols {white-space: pre-wrap;}'),
-            
-            
-            textInput("searchterms",
-                      "Searchterms",
-                      "methotrexate"),
-            textInput("exclusionterms",
-                      "Exclusionterms",
-                      "injection"),
-            selectInput("cols", 
-                        "Select columns to search in",
-                        names(product), 
-                        "productname",
-                        multiple = TRUE),
-            verbatimTextOutput("searchterms"),
-            verbatimTextOutput("exclusionterms"),
-            verbatimTextOutput("cols"),
-            verbatimTextOutput("randomstrings"),
-            
-            hr(),
-            downloadButton("downloadData", "Download"),
-            hr(),
-            selectInput("displaycolumns", "Select columns to display", names(product), multiple = TRUE)
-            
-            
-        ),
-
-        # Main panel with outputs
-        mainPanel(
-            width = 9,
-            tags$head(tags$style("#termsearched  {white-space: nowrap;  }"),
-                      tags$style("#excluded  {white-space: nowrap;  }"),
-                      tags$style("#included  {white-space: nowrap;  }"),
-                      tags$style(HTML("#withborder  {border: 4px solid black;}"))),
-            selectInput("displaycolumns", "Select columns to display", names(product), multiple = TRUE),
-            
-
-            fluidRow(id="withborder",
-                     h3("Termsearched"),
-                dataTableOutput("termsearched"),
-            ),
-            fluidRow(id="withborder",
-                     h3("Excluded"),
-                     dataTableOutput("excluded"),
-            ),
-            fluidRow(id="withborder",
-                     h3("Included"),
-                     dataTableOutput("included"),
-            ),
-            fluidRow(h3("Checks"),
-                     selectInput("checkcol", 
-                                 "Select column to check",
-                                 names(product), 
-                                 "bnftext"),
-                     tableOutput("checks"),
-            ),
-        )
+    
+    navbarPage("CPRD Codelist maker",
+               
+               tabPanel("Tab1",
+                        # Sidebar with inputs
+                        sidebarLayout(
+                            sidebarPanel(
+                                style = "position:fixed;width:23%;",
+                                width=3,
+                                tags$style(type='text/css', '#searchterms {white-space: pre-wrap;}'),
+                                tags$style(type='text/css', '#exclusionterms {white-space: pre-wrap;}'),
+                                tags$style(type='text/css', '#cols {white-space: pre-wrap;}'),
+                                
+                                
+                                textInput("searchterms",
+                                          "Searchterms",
+                                          "methotrexate"),
+                                textInput("exclusionterms",
+                                          "Exclusionterms",
+                                          "injection"),
+                                selectInput("cols", 
+                                            "Select columns to search in",
+                                            names(product), 
+                                            "productname",
+                                            multiple = TRUE),
+                                verbatimTextOutput("searchterms"),
+                                verbatimTextOutput("exclusionterms"),
+                                verbatimTextOutput("cols"),
+                                verbatimTextOutput("randomstrings"),
+                                
+                                hr(),
+                                downloadButton("downloadData", "Download"),
+                                hr(),
+                                selectInput("displaycolumns", "Select columns to display", names(product), multiple = TRUE)
+                                
+                                
+                            ),
+                            
+                            # Main panel with outputs
+                            mainPanel(
+                                width = 9,
+                                tags$head(tags$style("#termsearched  {white-space: nowrap;  }"),
+                                          tags$style("#excluded  {white-space: nowrap;  }"),
+                                          tags$style("#included  {white-space: nowrap;  }"),
+                                          tags$style(HTML("#withborder  {border: 4px solid black;}"))),
+                                selectInput("displaycolumns", "Select columns to display", names(product), multiple = TRUE),
+                                
+                                
+                                fluidRow(id="withborder",
+                                         h3("Termsearched"),
+                                         dataTableOutput("termsearched"),
+                                ),
+                                fluidRow(id="withborder",
+                                         h3("Excluded"),
+                                         dataTableOutput("excluded"),
+                                ),
+                                fluidRow(id="withborder",
+                                         h3("Included"),
+                                         dataTableOutput("included"),
+                                ),
+                                fluidRow(h3("Checks"),
+                                         selectInput("checkcol", 
+                                                     "Select column to check",
+                                                     names(product), 
+                                                     "bnftext"),
+                                         tableOutput("checks"),
+                                ),
+                            )
+                        )
+               ),
+               tabPanel("Tab2", 
+                        fluidRow(
+                            column(6,
+                                   fluidRow(
+                                       column(4,
+                                              fileInput("left", label=NULL)),
+                                       column(4,
+                                              actionButton("usecreatedcodelistleft", "Use created codelist")),
+                                       column(4,
+                                              htmlOutput("selectUI_left")
+                                       ),
+                                   ),
+                                dataTableOutput("lefttable")
+                            ),
+                            column(6,
+                                   fluidRow(
+                                       column(4,
+                                              fileInput("right", label=NULL)),
+                                       column(4,
+                                              actionButton("usecreatedcodelistright", "Use created codelist")),
+                                       column(4,
+                                              htmlOutput("selectUI_right")
+                                       ),
+                                   ),
+                                   dataTableOutput("righttable")
+                            )
+                        ),
+                        fluidRow(
+                            dataTableOutput("joined")
+                        )
+               )
     )
 )
 
@@ -89,6 +122,8 @@ ui <- fluidPage(
 # SERVER ------------------------------------------------------------------
 
 server <- function(input, output) {
+    
+# 1. CODELIST MAKER -------------------------------------------------------
 
 # Get values from input ---------------------------------------------------
 
@@ -241,6 +276,82 @@ server <- function(input, output) {
         },
         contentType = "application/zip"
     )
+    
+    
+
+# 2. CODELIST COMPARISON --------------------------------------------------
+
+
+    #Import tables
+    lefttable <- reactive({
+        inFile <- input$left
+        if (is.null(inFile))
+            return(NULL)
+        import(inFile$datapath)
+    })
+    
+    righttable <- reactive({
+        inFile <- input$right
+        if (is.null(inFile))
+            return(NULL)
+        import(inFile$datapath)
+    })
+    
+    #Join tables
+    lefttable_joined <- reactive({
+        if (!is.null(righttable()) & !is.null(lefttable())) {
+            lefttable() %>% 
+                mutate(match=ifelse(prodcode %in% righttable()$prodcode,
+                                    "yes",
+                                    "no"))
+        } else {lefttable()}
+    })
+    righttable_joined <- reactive({
+        if (!is.null(righttable()) & !is.null(lefttable())) {
+            righttable() %>% 
+                mutate(match=ifelse(prodcode %in% lefttable()$prodcode,
+                                    "yes",
+                                    "no"))
+        } else {righttable()}
+    })
+    
+    #Make dynamically updating UI for picking the columns
+    output$selectUI_left <- renderUI({ 
+        selectInput("selectUI_left", label = NULL, names(lefttable_joined()), multiple = TRUE)
+    })
+    output$selectUI_right <- renderUI({ 
+        selectInput("selectUI_right", label = NULL, names(righttable_joined()), multiple = TRUE)
+    })
+    
+    #Display all columns if nothing is selected
+    displaycolumns_left <- reactive({
+        if (!is.null(input$selectUI_left)) {
+            input$selectUI_left
+        } else { names(lefttable_joined())}
+    })
+    displaycolumns_right <- reactive({
+        if (!is.null(input$selectUI_right)) {
+            input$selectUI_right
+        } else { names(righttable_joined())}
+    })
+    
+    #Render the tables
+    output$lefttable <- renderDataTable({ 
+        
+        temp <- datatable(lefttable_joined()[,displaycolumns_left(), drop=FALSE], options = dtoptions) 
+        
+        if (!is.null(righttable()) & !is.null(lefttable()) & ("match" %in% colnames(lefttable_joined()[,displaycolumns_left(), drop=FALSE]))) {
+            temp %>% formatStyle("match", target = "row", backgroundColor = styleEqual(c("yes", "no"), c("LightGreen","LightCoral")))
+        } else { temp}
+    })
+    output$righttable <- renderDataTable({ 
+        temp <- datatable(righttable_joined()[,displaycolumns_right(), drop=FALSE], options = dtoptions) 
+        
+        if (!is.null(righttable()) & !is.null(lefttable()) & ("match" %in% colnames(righttable_joined()[,displaycolumns_left(), drop=FALSE]))) {
+            temp %>% formatStyle("match", target = "row", backgroundColor = styleEqual(c("yes", "no"), c("LightGreen","LightCoral")))
+        } else { temp}
+    })
+    
 }
 
 # Run the application 
