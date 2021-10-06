@@ -234,8 +234,8 @@ server <- function(input, output) {
             print(tempdir())
             
             fs <- c("codelist.csv", "terms.csv")
-            write.csv(included(), "codelist.csv", row.names=FALSE)
-            write.csv(termtable(), "terms.csv", row.names=FALSE)
+            write.csv(included(), "codelist.csv", row.names=FALSE, na = "")
+            write.csv(termtable(), "terms.csv", row.names=FALSE, na = "")
 
             zip(zipfile=filename, files=fs)
         },
