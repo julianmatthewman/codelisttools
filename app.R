@@ -1,5 +1,6 @@
 library(shiny)
 library(rio)
+library(DT)
 library(bslib)
 library(haven)
 library(tidyverse)
