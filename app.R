@@ -10,7 +10,8 @@ library(tidyverse)
 sapply(list.files("R", full.names = TRUE) ,source, .GlobalEnv)
 
 #Import CPRD product browser
-product <- import("in/product.csv")
+#product <- import("in/product.csv")
+product <- import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
 
 # UI ----------------------------------------------------------------------
 
@@ -94,7 +95,8 @@ ui <- fluidPage(
                                        column(4,
                                               actionButton("get_codelist_left", "Use from codelist maker")),
                                        column(4,
-                                              htmlOutput("selectUI_left")
+                                              htmlOutput("selectUI_left"),
+                                              htmlOutput("matchcolumn")
                                        ),
                                    ),
                                 dataTableOutput("lefttable")
@@ -106,7 +108,9 @@ ui <- fluidPage(
                                        column(4,
                                               actionButton("get_codelist_right", "Use from codelist maker")),
                                        column(4,
-                                              htmlOutput("selectUI_right")
+                                              htmlOutput("selectUI_right"),
+                                              br(),
+                                              br()
                                        ),
                                    ),
                                    dataTableOutput("righttable")
@@ -124,13 +128,15 @@ ui <- fluidPage(
 
 server <- function(input, output) {
     
+#//////////////////////////////////////////////////////////////////////////    
 # 1. CODELIST MAKER -------------------------------------------------------
-
+#//////////////////////////////////////////////////////////////////////////    
+    
 # Get values from input ---------------------------------------------------
 
     #Make vectors from the inputs
-    searchterms <- reactive(unlist(strsplit(input$searchterms,";")))
-    exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,";")))
+    searchterms <- reactive(unlist(strsplit(input$searchterms,";")))  %>% debounce(2000)
+    exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,";")))  %>% debounce(2000)
     cols <- reactive(input$cols)
     
 
@@ -340,6 +346,10 @@ server <- function(input, output) {
     })
     output$selectUI_right <- renderUI({ 
         selectInput("selectUI_right", label = NULL, names(righttable_joined()), multiple = TRUE)
+    })
+    
+    output$matchcolumn <- renderUI({ 
+        selectInput("matchcolumn", label = "Match on", intersect(names(lefttable_joined()), names(righttable_joined())))
     })
     
     #Display all columns if nothing is selected
