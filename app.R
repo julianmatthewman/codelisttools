@@ -16,9 +16,9 @@ product <- import("in/product.csv")
 
 ui <- fluidPage(
     
-    navbarPage("CPRD Codelist maker",
+    navbarPage("Codelist tools",
                
-               tabPanel("Tab1",
+               tabPanel("Codelist Maker",
                         # Sidebar with inputs
                         sidebarLayout(
                             sidebarPanel(
@@ -85,14 +85,14 @@ ui <- fluidPage(
                             )
                         )
                ),
-               tabPanel("Tab2", 
+               tabPanel("Codelist Comparison", 
                         fluidRow(
                             column(6,
                                    fluidRow(
                                        column(4,
-                                              fileInput("left", label=NULL)),
+                                              fileInput("import_codelist_left", label=NULL)),
                                        column(4,
-                                              actionButton("usecreatedcodelistleft", "Use created codelist")),
+                                              actionButton("get_codelist_left", "Use from codelist maker")),
                                        column(4,
                                               htmlOutput("selectUI_left")
                                        ),
@@ -102,9 +102,9 @@ ui <- fluidPage(
                             column(6,
                                    fluidRow(
                                        column(4,
-                                              fileInput("right", label=NULL)),
+                                              fileInput("import_codelist_right", label=NULL)),
                                        column(4,
-                                              actionButton("usecreatedcodelistright", "Use created codelist")),
+                                              actionButton("get_codelist_right", "Use from codelist maker")),
                                        column(4,
                                               htmlOutput("selectUI_right")
                                        ),
@@ -242,7 +242,7 @@ server <- function(input, output) {
     )
     
 
-# Downloadable csv of final codelist and terms --------------------------------------
+# Downloadable csvs of final codelist and terms --------------------------------------
     
     # Make table of searchterms
     termtable <- reactive({
@@ -257,11 +257,12 @@ server <- function(input, output) {
     })
 
 
-    # Downloadable csv of selected dataset ----
+    # Make random string to include in filename
     randomstrings <- reactive({termtable() #Make random strings that update whenever either of the tables updates 
                               included()
         stringi::stri_rand_strings(1, 6)})
     
+    # Zip codelist and terms and provide via download button
     output$downloadData <- downloadHandler(
         filename = function() {paste("codelist","-", randomstrings(), "-", Sys.Date(), ".zip", sep = "")},
         content = function(filename) {
@@ -279,43 +280,60 @@ server <- function(input, output) {
     )
     
     
+#//////////////////////////////////////////////////////////////////////////
+# 2. CODELIST COMPARISON ##################################################
+#//////////////////////////////////////////////////////////////////////////
 
-# 2. CODELIST COMPARISON --------------------------------------------------
-
-
-    #Import tables
-    lefttable <- reactive({
-        inFile <- input$left
-        if (is.null(inFile))
-            return(NULL)
-        import(inFile$datapath)
+# Set values for left and right tables ------------------------------------
+    
+    # Make a reactiveValues to store the data; downstream functions will use whatever is stored in here ("duelling values", see https://stackoverflow.com/questions/29716868/r-shiny-how-to-get-an-reactive-data-frame-updated-each-time-pressing-an-actionb)
+    v <- reactiveValues(lefttable = NULL, righttable = NULL)
+    
+    #Either get codelist from codelist maker ...
+    observeEvent(input$get_codelist_left, {
+        v$lefttable <- included()
+    })
+    observeEvent(input$get_codelist_right, {
+        v$righttable <- included()
     })
     
-    righttable <- reactive({
-        inFile <- input$right
+    #... or import from file.
+    observeEvent(input$import_codelist_left, {
+        inFile <- input$import_codelist_left
         if (is.null(inFile))
             return(NULL)
-        import(inFile$datapath)
-    })
+        v$lefttable <- import(inFile$datapath)
+    })  
+    observeEvent(input$import_codelist_right, {
+        inFile <- input$import_codelist_right
+        if (is.null(inFile))
+            return(NULL)
+        v$righttable <- import(inFile$datapath)
+    })  
     
-    #Join tables
+
+# Join tables and identify matches ----------------------------------------
+
     lefttable_joined <- reactive({
-        if (!is.null(righttable()) & !is.null(lefttable())) {
-            lefttable() %>% 
-                mutate(match=ifelse(prodcode %in% righttable()$prodcode,
+        if (!is.null(v$lefttable) & !is.null(v$righttable)) {
+            v$lefttable %>% 
+                mutate(match=ifelse(prodcode %in% v$righttable$prodcode,
                                     "yes",
                                     "no"))
-        } else {lefttable()}
+        } else {v$lefttable}
     })
     righttable_joined <- reactive({
-        if (!is.null(righttable()) & !is.null(lefttable())) {
-            righttable() %>% 
-                mutate(match=ifelse(prodcode %in% lefttable()$prodcode,
+        if (!is.null(v$righttable) & !is.null(v$lefttable)) {
+            v$righttable %>% 
+                mutate(match=ifelse(prodcode %in% v$lefttable$prodcode,
                                     "yes",
                                     "no"))
-        } else {righttable()}
+        } else {v$righttable}
     })
     
+    
+# Pick which columns should be displayed ----------------------------------
+
     #Make dynamically updating UI for picking the columns
     output$selectUI_left <- renderUI({ 
         selectInput("selectUI_left", label = NULL, names(lefttable_joined()), multiple = TRUE)
@@ -335,23 +353,27 @@ server <- function(input, output) {
             input$selectUI_right
         } else { names(righttable_joined())}
     })
+
+
+# Render the tables -------------------------------------------------------
+
+    dtoptions2 <- list(pageLength = 20, scrollX = TRUE)
     
-    #Render the tables
     output$lefttable <- renderDataTable({ 
+        temp <- datatable(lefttable_joined()[,displaycolumns_left(), drop=FALSE], options = dtoptions2) 
         
-        temp <- datatable(lefttable_joined()[,displaycolumns_left(), drop=FALSE], options = dtoptions) 
-        
-        if (!is.null(righttable()) & !is.null(lefttable()) & ("match" %in% colnames(lefttable_joined()[,displaycolumns_left(), drop=FALSE]))) {
-            temp %>% formatStyle("match", target = "row", backgroundColor = styleEqual(c("yes", "no"), c("LightGreen","LightCoral")))
+        if (!is.null(v$righttable) & !is.null(v$lefttable) & ("match" %in% colnames(lefttable_joined()[,displaycolumns_left(), drop=FALSE]))) {
+            temp %>% formatStyle("match", target = "row", backgroundColor = styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
         } else { temp}
     })
     output$righttable <- renderDataTable({ 
-        temp <- datatable(righttable_joined()[,displaycolumns_right(), drop=FALSE], options = dtoptions) 
+        temp <- datatable(righttable_joined()[,displaycolumns_right(), drop=FALSE], options = dtoptions2) 
         
-        if (!is.null(righttable()) & !is.null(lefttable()) & ("match" %in% colnames(righttable_joined()[,displaycolumns_left(), drop=FALSE]))) {
-            temp %>% formatStyle("match", target = "row", backgroundColor = styleEqual(c("yes", "no"), c("LightGreen","LightCoral")))
+        if (!is.null(v$righttable) & !is.null(v$lefttable) & ("match" %in% colnames(righttable_joined()[,displaycolumns_left(), drop=FALSE]))) {
+            temp %>% formatStyle("match", target = "row", backgroundColor = styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
         } else { temp}
     })
+    
     
 }
 
