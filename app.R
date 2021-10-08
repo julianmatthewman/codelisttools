@@ -9,9 +9,14 @@ library(tidyverse)
 # Source all functions from the "R" folder
 sapply(list.files("R", full.names = TRUE) ,source, .GlobalEnv)
 
-#Import CPRD product browser
-#product <- import("in/product.csv")
-product <- import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
+#Import CPRD product browsers
+paths <- c(
+    "in/product.csv",
+    "in/medical.csv"
+)
+browsers <- map(paths, import) %>% set_names(basename(tools::file_path_sans_ext(paths)))
+
+#product <- import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
 
 # UI ----------------------------------------------------------------------
 
@@ -29,6 +34,14 @@ ui <- fluidPage(
                                 tags$style(type='text/css', '#exclusionterms {white-space: pre-wrap;}'),
                                 tags$style(type='text/css', '#cols {white-space: pre-wrap;}'),
                                 
+                                selectInput("select_codebrowser",
+                                            "Select browser",
+                                            names(browsers),
+                                            "product"),
+                                fileInput("import_codebrowser", label=NULL),
+                            
+                                
+                                hr(),
                                 
                                 textInput("searchterms",
                                           "Searchterms",
@@ -36,20 +49,19 @@ ui <- fluidPage(
                                 textInput("exclusionterms",
                                           "Exclusionterms",
                                           "injection"),
-                                selectInput("cols", 
-                                            "Select columns to search in",
-                                            names(product), 
-                                            "productname",
-                                            multiple = TRUE),
+                                htmlOutput("select_search_cols"),
                                 verbatimTextOutput("searchterms"),
                                 verbatimTextOutput("exclusionterms"),
                                 verbatimTextOutput("cols"),
                                 verbatimTextOutput("randomstrings"),
                                 
                                 hr(),
+                                
                                 downloadButton("downloadData", "Download"),
                                 hr(),
-                                selectInput("displaycolumns", "Select columns to display", names(product), multiple = TRUE)
+                                
+                                htmlOutput("select_display_cols"),
+                                
                                 
                                 
                             ),
@@ -61,8 +73,7 @@ ui <- fluidPage(
                                           tags$style("#excluded  {white-space: nowrap;  }"),
                                           tags$style("#included  {white-space: nowrap;  }"),
                                           tags$style(HTML("#withborder  {border: 4px solid black;}"))),
-                                selectInput("displaycolumns", "Select columns to display", names(product), multiple = TRUE),
-                                
+
                                 
                                 fluidRow(id="withborder",
                                          h3("Termsearched"),
@@ -77,10 +88,7 @@ ui <- fluidPage(
                                          dataTableOutput("included"),
                                 ),
                                 fluidRow(h3("Checks"),
-                                         selectInput("checkcol", 
-                                                     "Select column to check",
-                                                     names(product), 
-                                                     "bnftext"),
+                                         htmlOutput("select_check_cols"),
                                          tableOutput("checks"),
                                 ),
                             )
@@ -90,14 +98,14 @@ ui <- fluidPage(
                         fluidRow(
                             column(6,
                                    fluidRow(
-                                       column(4,
+                                       column(3,
                                               fileInput("import_codelist_left", label=NULL)),
-                                       column(4,
+                                       column(3,
                                               actionButton("get_codelist_left", "Use from codelist maker")),
-                                       column(4,
-                                              htmlOutput("selectUI_left"),
-                                              htmlOutput("matchcolumn")
-                                       ),
+                                       column(3,
+                                              htmlOutput("selectUI_left")),
+                                       column(3,
+                                              htmlOutput("matchcolumn")),
                                    ),
                                 dataTableOutput("lefttable")
                             ),
@@ -108,9 +116,7 @@ ui <- fluidPage(
                                        column(4,
                                               actionButton("get_codelist_right", "Use from codelist maker")),
                                        column(4,
-                                              htmlOutput("selectUI_right"),
-                                              br(),
-                                              br()
+                                              htmlOutput("selectUI_right")
                                        ),
                                    ),
                                    dataTableOutput("righttable")
@@ -130,31 +136,83 @@ server <- function(input, output) {
     
 #//////////////////////////////////////////////////////////////////////////    
 # 1. CODELIST MAKER -------------------------------------------------------
-#//////////////////////////////////////////////////////////////////////////    
+#//////////////////////////////////////////////////////////////////////////  
+    
+    
+# Select browser ----------------------------------------------------------
+
+    # Make a reactiveValues to store the data; downstream functions will use whatever is stored in here ("duelling values", see https://stackoverflow.com/questions/29716868/r-shiny-how-to-get-an-reactive-data-frame-updated-each-time-pressing-an-actionb)
+    codebrowser <- reactiveValues(data = NULL)
+    
+    #Either select built in browser ...
+    observeEvent(input$select_codebrowser, {
+        codebrowser$data <- browsers[[input$select_codebrowser]]
+    })
+
+    #... or import from file.
+    observeEvent(input$import_codebrowser, {
+        inFile <- input$import_codebrowser
+        if (is.null(inFile))
+            return(NULL)
+        codebrowser$data <- import(inFile$datapath)
+    })
+    
+
+# Make dynamic UIs to pick columns ----------------------------------------
+
+    
+    #Make dynamically updating UI for picking the columns to search in
+    output$select_search_cols <- renderUI({ 
+        selectInput("cols", "Select columns to search in", names(codebrowser$data),
+                    ifelse("productname" %in% names(codebrowser$data), "productname", 
+                           ifelse("readterm" %in% names(codebrowser$data), "readterm", NULL)),
+                    multiple = TRUE)
+    })
+    
+    #Make dynamically updating UI for picking the columns to display
+    output$select_display_cols <- renderUI({ 
+        selectInput("displaycolumns", "Select columns to display", names(codebrowser$data), multiple = TRUE)
+    })
+    
+    #Make dynamically updating UI for picking the column to check
+    output$select_check_cols <- renderUI({ 
+        selectInput("checkcol", "Select column to check",names(codebrowser$data))
+    })
+  
     
 # Get values from input ---------------------------------------------------
 
     #Make vectors from the inputs
     searchterms <- reactive(unlist(strsplit(input$searchterms,";")))  %>% debounce(2000)
     exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,";")))  %>% debounce(2000)
+    checkcol <- reactive(input$checkcol)
+    
     cols <- reactive(input$cols)
+
+    displaycolumns <- reactive({
+        if (!is.null(input$displaycolumns)) {
+            input$displaycolumns
+        } else { names(codebrowser$data)}
+    })
+    
     
 
 # Make the Tables ---------------------------------------------------------
 
-    termsearched <- reactive(
+    termsearched <- reactive({
+        validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
         termsearch(
-        .data = product,
+        .data = codebrowser$data,
         .cols = cols(),
         .searchterms = searchterms())
-    )
+    })
     
-    excluded <- reactive(
+    excluded <- reactive({
         termsearch(
         .data = termsearched(),
         .cols = cols(),
         .searchterms = exclusionterms())
-    )
+    })
     
     included <- reactive(
         setdiff(termsearched(), excluded())
@@ -162,7 +220,7 @@ server <- function(input, output) {
     
     checks <- reactive(
         included() %>% 
-        group_by(!! sym(input$checkcol)) %>% 
+        group_by(!!! syms(checkcol())) %>% 
         tally() %>% 
         arrange(desc(n))
     )
@@ -179,7 +237,7 @@ server <- function(input, output) {
     termsearched_highlighted <- reactive({
         termsearched() %>%
             mutate(
-                across(everything(),
+                across(any_of(input$cols),
                        ~ str_replace_all(.x,
                                          regex(paste(searchterms(), collapse="|"), ignore_case = TRUE),
                                          highlight_green
@@ -192,7 +250,7 @@ server <- function(input, output) {
     excluded_highlighted <- reactive({
         excluded() %>%
             mutate(
-                across(everything(),
+                across(any_of(input$cols),
                        ~ str_replace_all(.x,
                                          regex(paste(exclusionterms(), collapse="|"), ignore_case = TRUE),
                                          highlight_yellow
@@ -207,11 +265,7 @@ server <- function(input, output) {
     # Set table options    
     dtoptions <- list(pageLength = 5, scrollX = TRUE)
     # Set which tables to display
-    displaycolumns <- reactive({
-        if (!is.null(input$displaycolumns)) {
-            input$displaycolumns
-        } else { names(product)}
-    })
+   
     #Render tables
     output$termsearched <- renderDataTable({ 
         termsearched_highlighted()[,displaycolumns(), drop=FALSE]
@@ -338,16 +392,17 @@ server <- function(input, output) {
     })
     
     
-# Pick which columns should be displayed ----------------------------------
+# Pick which columns should be displayed and matched on -------------------
 
-    #Make dynamically updating UI for picking the columns
+    #Make dynamically updating UI for picking the columns to be displayed
     output$selectUI_left <- renderUI({ 
-        selectInput("selectUI_left", label = NULL, names(lefttable_joined()), multiple = TRUE)
+        selectInput("selectUI_left", label = "Display", names(lefttable_joined()), multiple = TRUE)
     })
     output$selectUI_right <- renderUI({ 
-        selectInput("selectUI_right", label = NULL, names(righttable_joined()), multiple = TRUE)
+        selectInput("selectUI_right", label = "Display", names(righttable_joined()), multiple = TRUE)
     })
     
+    #Make dynamically updating UI for picking the column to be matched on
     output$matchcolumn <- renderUI({ 
         selectInput("matchcolumn", label = "Match on", intersect(names(lefttable_joined()), names(righttable_joined())))
     })
