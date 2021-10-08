@@ -133,6 +133,7 @@ ui <- fluidPage(
 # SERVER ------------------------------------------------------------------
 
 server <- function(input, output) {
+    options(shiny.maxRequestSize=100*1024^2)
     
 #//////////////////////////////////////////////////////////////////////////    
 # 1. CODELIST MAKER -------------------------------------------------------
@@ -165,7 +166,7 @@ server <- function(input, output) {
     output$select_search_cols <- renderUI({ 
         selectInput("cols", "Select columns to search in", names(codebrowser$data),
                     ifelse("productname" %in% names(codebrowser$data), "productname", 
-                           ifelse("readterm" %in% names(codebrowser$data), "readterm", NULL)),
+                           ifelse("readterm" %in% names(codebrowser$data), "readterm", names(codebrowser$data)[[1]])),
                     multiple = TRUE)
     })
     
@@ -374,10 +375,16 @@ server <- function(input, output) {
 
 # Join tables and identify matches ----------------------------------------
 
+    #Make dynamically updating UI for picking the column to be matched on
+    output$matchcolumn <- renderUI({ 
+        selectInput("matchcolumn", label = "Match on", intersect(names(lefttable_joined()), names(righttable_joined())),
+                    lefttable_joined()[[1]])
+    })
+    
     lefttable_joined <- reactive({
         if (!is.null(v$lefttable) & !is.null(v$righttable)) {
             v$lefttable %>% 
-                mutate(match=ifelse(prodcode %in% v$righttable$prodcode,
+                mutate(match=ifelse(!!!syms(input$matchcolumn) %in% v$righttable[[!!!syms(input$matchcolumn)]],
                                     "yes",
                                     "no"))
         } else {v$lefttable}
@@ -385,14 +392,14 @@ server <- function(input, output) {
     righttable_joined <- reactive({
         if (!is.null(v$righttable) & !is.null(v$lefttable)) {
             v$righttable %>% 
-                mutate(match=ifelse(prodcode %in% v$lefttable$prodcode,
+                mutate(match=ifelse(!!!syms(input$matchcolumn) %in% v$lefttable[[!!!syms(input$matchcolumn)]],
                                     "yes",
                                     "no"))
         } else {v$righttable}
     })
     
     
-# Pick which columns should be displayed and matched on -------------------
+# Pick which columns should be displayed  -------------------
 
     #Make dynamically updating UI for picking the columns to be displayed
     output$selectUI_left <- renderUI({ 
@@ -400,11 +407,6 @@ server <- function(input, output) {
     })
     output$selectUI_right <- renderUI({ 
         selectInput("selectUI_right", label = "Display", names(righttable_joined()), multiple = TRUE)
-    })
-    
-    #Make dynamically updating UI for picking the column to be matched on
-    output$matchcolumn <- renderUI({ 
-        selectInput("matchcolumn", label = "Match on", intersect(names(lefttable_joined()), names(righttable_joined())))
     })
     
     #Display all columns if nothing is selected
@@ -418,6 +420,8 @@ server <- function(input, output) {
             input$selectUI_right
         } else { names(righttable_joined())}
     })
+    
+
 
 
 # Render the tables -------------------------------------------------------
