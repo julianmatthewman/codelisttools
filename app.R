@@ -28,7 +28,6 @@ ui <- fluidPage(
                         # Sidebar with inputs
                         sidebarLayout(
                             sidebarPanel(
-                                style = "position:fixed;width:23%;",
                                 width=3,
                                 tags$style(type='text/css', '#searchterms {white-space: pre-wrap;}'),
                                 tags$style(type='text/css', '#exclusionterms {white-space: pre-wrap;}'),
@@ -44,8 +43,13 @@ ui <- fluidPage(
                                 hr(),
                                 
                                 textInput("searchterms",
-                                          "Searchterms",
-                                          "methotrexate"),
+                                          label = tags$span(
+                                              "Searchterms", 
+                                              tags$i(
+                                                  class = "glyphicon glyphicon-info-sign", 
+                                                  style = "color:#0072B2;",
+                                                  title = "Enter terms to search for separated by a semicolon (;) without spaces. E.g.: methotrexate;ciclosporin;azathioprin. To require that all off multiple terms are present in one entry, wrap terms in (?=.*term1)(?=.*term2).*?. E.g.: (?=.*hip)(?=.*fracture).*$ searches for entries that contain both hip and fracture.")),
+                                              "methotrexate"),
                                 textInput("exclusionterms",
                                           "Exclusionterms",
                                           "injection"),
@@ -76,15 +80,15 @@ ui <- fluidPage(
 
                                 
                                 fluidRow(id="withborder",
-                                         h3("Termsearched"),
+                                         h4("Initial codelist"),
                                          dataTableOutput("termsearched"),
                                 ),
                                 fluidRow(id="withborder",
-                                         h3("Excluded"),
+                                         h4("Excluded"),
                                          dataTableOutput("excluded"),
                                 ),
                                 fluidRow(id="withborder",
-                                         h3("Included"),
+                                         h4("Final codelist"),
                                          dataTableOutput("included"),
                                 ),
                                 fluidRow(h3("Checks"),
@@ -125,9 +129,18 @@ ui <- fluidPage(
                         fluidRow(
                             dataTableOutput("joined")
                         )
+               ),
+               tabPanel("About",
+                        fluidRow(
+                            column(6,
+                                   htmltools::includeMarkdown("docs/codelist_maker_README.md")),
+                            column(6,
+                                   htmltools::includeMarkdown("docs/codelist_comparison_README.md"))
+                        )
                )
     )
 )
+
 
 
 # SERVER ------------------------------------------------------------------
@@ -177,7 +190,8 @@ server <- function(input, output) {
     
     #Make dynamically updating UI for picking the column to check
     output$select_check_cols <- renderUI({ 
-        selectInput("checkcol", "Select column to check",names(codebrowser$data))
+        selectInput("checkcol", "Select column to check",names(codebrowser$data),
+                    ifelse("bnftext" %in% names(codebrowser$data), "bnftext", names(codebrowser$data)[[1]]))
     })
   
     
@@ -269,7 +283,7 @@ server <- function(input, output) {
    
     #Render tables
     output$termsearched <- renderDataTable({ 
-        termsearched_highlighted()[,displaycolumns(), drop=FALSE]
+        termsearched_highlighted()[,displaycolumns(), drop=FALSE] 
         }, escape = FALSE, options = dtoptions)
     
     output$excluded <- renderDataTable({ 
@@ -377,26 +391,34 @@ server <- function(input, output) {
 
     #Make dynamically updating UI for picking the column to be matched on
     output$matchcolumn <- renderUI({ 
-        selectInput("matchcolumn", label = "Match on", intersect(names(lefttable_joined()), names(righttable_joined())),
-                    lefttable_joined()[[1]])
+        selectInput("matchcolumn", label = "Match on", intersect(names(v$lefttable), names(v$righttable)),
+                    NULL)
     })
     
     lefttable_joined <- reactive({
+      validate(need(length(intersect(names(v$lefttable), names(v$righttable)))>0 | is.null(v$lefttable) | is.null(v$righttable), "Tables need at least one matching column"))
+      validate(need(input$matchcolumn %in% names(v$lefttable) | is.null(v$lefttable) | is.null(v$righttable) , "Loading"))
+
         if (!is.null(v$lefttable) & !is.null(v$righttable)) {
             v$lefttable %>% 
-                mutate(match=ifelse(!!!syms(input$matchcolumn) %in% v$righttable[[!!!syms(input$matchcolumn)]],
+                mutate(match=ifelse(!!sym(input$matchcolumn) %in% v$righttable[[input$matchcolumn]],
                                     "yes",
                                     "no"))
         } else {v$lefttable}
     })
     righttable_joined <- reactive({
+      validate(need(length(intersect(names(v$lefttable), names(v$righttable)))>0 | is.null(v$lefttable) | is.null(v$righttable), "Tables need at least one matching column"))
+      validate(need(input$matchcolumn %in% names(v$lefttable) | is.null(v$lefttable) | is.null(v$righttable) , "Loading"))
+      
         if (!is.null(v$righttable) & !is.null(v$lefttable)) {
             v$righttable %>% 
-                mutate(match=ifelse(!!!syms(input$matchcolumn) %in% v$lefttable[[!!!syms(input$matchcolumn)]],
+                mutate(match=ifelse(!!sym(input$matchcolumn) %in% v$lefttable[[input$matchcolumn]],
                                     "yes",
                                     "no"))
         } else {v$righttable}
     })
+    
+
     
     
 # Pick which columns should be displayed  -------------------
