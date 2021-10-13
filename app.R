@@ -9,11 +9,8 @@ library(tidyverse)
 # Source all functions from the "R" folder
 sapply(list.files("R", full.names = TRUE) ,source, .GlobalEnv)
 
-#Import CPRD product browsers
-paths <- c(
-    "in/product.csv",
-    "in/medical.csv"
-)
+#Import all browsers in the "in" folder
+paths <- dir("in", full.names = TRUE)
 browsers <- map(paths, import) %>% set_names(basename(tools::file_path_sans_ext(paths)))
 
 #product <- import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
