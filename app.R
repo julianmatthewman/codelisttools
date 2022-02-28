@@ -3,6 +3,7 @@ library(rio)
 library(DT)
 library(bslib)
 library(haven)
+library(markdown)
 library(tidyverse)
 
 
@@ -33,7 +34,7 @@ ui <- fluidPage(
                                 selectInput("select_codebrowser",
                                             "Select browser",
                                             names(browsers),
-                                            "product"),
+                                            "ICD10_Edition5_CodesAndTitlesAndMetadata_GB_20160401"),
                                 fileInput("import_codebrowser", label=NULL),
                             
                                 
@@ -46,10 +47,10 @@ ui <- fluidPage(
                                                   class = "glyphicon glyphicon-info-sign", 
                                                   style = "color:#0072B2;",
                                                   title = "Enter terms to search for separated by a semicolon (;) without spaces. E.g.: methotrexate;ciclosporin;azathioprin. To require that all off multiple terms are present in one entry, wrap terms in (?=.*term1)(?=.*term2).*?. E.g.: (?=.*hip)(?=.*fracture).*$ searches for entries that contain both hip and fracture.")),
-                                              "methotrexate"),
+                                              "diabetes"),
                                 textInput("exclusionterms",
                                           "Exclusionterms",
-                                          "injection"),
+                                          "insipidus"),
                                 htmlOutput("select_search_cols"),
                                 verbatimTextOutput("searchterms"),
                                 verbatimTextOutput("exclusionterms"),
