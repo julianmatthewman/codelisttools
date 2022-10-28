@@ -458,7 +458,7 @@ server <- function(input, output) {
     output$righttable <- renderDataTable({ 
         temp <- datatable(righttable_joined()[,displaycolumns_right(), drop=FALSE], options = dtoptions2) 
         
-        if (!is.null(v$righttable) & !is.null(v$lefttable) & ("match" %in% colnames(righttable_joined()[,displaycolumns_left(), drop=FALSE]))) {
+        if (!is.null(v$righttable) & !is.null(v$lefttable) & ("match" %in% colnames(righttable_joined()[,displaycolumns_right(), drop=FALSE]))) {
             temp %>% formatStyle("match", target = "row", backgroundColor = styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
         } else { temp}
     })
