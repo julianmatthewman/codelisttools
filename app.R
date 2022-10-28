@@ -108,6 +108,7 @@ ui <- fluidPage(
                                               htmlOutput("selectUI_left")),
                                        column(3,
                                               htmlOutput("matchcolumn")),
+
                                    ),
                                 dataTableOutput("lefttable")
                             ),
@@ -399,7 +400,7 @@ server <- function(input, output) {
 
         if (!is.null(v$lefttable) & !is.null(v$righttable)) {
             v$lefttable %>% 
-                mutate(match=ifelse(!!sym(input$matchcolumn) %in% v$righttable[[input$matchcolumn]],
+                mutate(match=ifelse(tolower(!!sym(input$matchcolumn)) %in% tolower(v$righttable[[input$matchcolumn]]),
                                     "yes",
                                     "no"))
         } else {v$lefttable}
@@ -410,7 +411,7 @@ server <- function(input, output) {
       
         if (!is.null(v$righttable) & !is.null(v$lefttable)) {
             v$righttable %>% 
-                mutate(match=ifelse(!!sym(input$matchcolumn) %in% v$lefttable[[input$matchcolumn]],
+                mutate(match=ifelse(tolower(!!sym(input$matchcolumn)) %in% tolower(v$lefttable[[input$matchcolumn]]),
                                     "yes",
                                     "no"))
         } else {v$righttable}
