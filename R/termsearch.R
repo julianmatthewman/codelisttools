@@ -15,6 +15,14 @@
 #'     .searchterms = c("setosa", "5.1"))
 
 termsearch <- function(.data, .cols, .searchterms) {
+
+    # Transform searchterms so they are in this form: (?=.*term1)(?=.*term2).*?
+    .searchterms <- .searchterms %>% 
+        strsplit(split = " ") %>% 
+        map(~paste0("(?=.*", paste(.x, collapse = ")(?=.*"), ").*?")) %>% 
+        unlist()
+
+        
     # Filter .data to rows where if in any of the .cols ...
     filter(.data, if_any(c(!!! syms(.cols)),
                          # ... an item matches one of the .searchterms.
