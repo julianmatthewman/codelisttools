@@ -246,14 +246,21 @@ server <- function(input, output) {
     highlight_yellow <- function(x) {paste0("<span style='background-color:yellow;'>", x, "</span>")}
     highlight_green <- function(x) {paste0("<span style='background-color:LightGreen;'>", x, "</span>")}
     
+
     
     #Make included table with highlighted words
     termsearched_highlighted <- reactive({
+        # Transform searchterms so they are in this form: term1|term2|term3|...
+        searchterms_highlightable <- searchterms() %>% 
+            strsplit(split = " ") %>% 
+            map(~paste(.x, collapse = "|")) %>% 
+            unlist()
+        
         termsearched() %>%
             mutate(
                 across(any_of(input$cols),
                        ~ str_replace_all(.x,
-                                         regex(paste(searchterms(), collapse="|"), ignore_case = TRUE),
+                                         regex(paste(searchterms_highlightable, collapse="|"), ignore_case = TRUE),
                                          highlight_green
                        )
                 )
