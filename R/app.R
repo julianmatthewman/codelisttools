@@ -1,21 +1,21 @@
-library(shiny)
-library(rio)
-library(DT)
-library(bslib)
-library(haven)
-library(markdown)
-library(tidyverse)
+app <- function(...) {
+    
+    library(shiny)
+    library(rio)
+    library(DT)
+    library(bslib)
+    library(haven)
+    library(markdown)
+    library(tidyverse)
+    
 
-
-# Source all functions from the "R" folder
-sapply(list.files("R", full.names = TRUE) ,source, .GlobalEnv)
-
-#Import all browsers in the "in" folder
-paths <- dir("in", full.names = TRUE)
-browsers <- map(paths, import) %>% set_names(basename(tools::file_path_sans_ext(paths)))
-
-#product <- import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
-
+    
+    #Import all browsers in the "in" folder
+    paths <- dir("in", full.names = TRUE)
+    browsers <- map(paths, import) %>% set_names(basename(tools::file_path_sans_ext(paths)))
+    
+    #product <- import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
+    
 # UI ----------------------------------------------------------------------
 
 ui <- fluidPage(
@@ -215,22 +215,18 @@ server <- function(input, output) {
 
     termsearched <- reactive({
         validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
-        termsearch(
-        .data = codebrowser$data,
-        .cols = cols(),
-        .searchterms = searchterms())
+        codebrowser$data %>% 
+            filter(if_any(c(!!! syms(cols())), ~ termsearch(.x, searchterms())))
     })
     
     excluded <- reactive({
-        termsearch(
-        .data = termsearched(),
-        .cols = cols(),
-        .searchterms = exclusionterms())
+        termsearched() %>% 
+            filter(if_any(c(!!! syms(cols())), ~ termsearch(.x, exclusionterms())))
     })
-    
-    included <- reactive(
-        setdiff(termsearched(), excluded())
-        )
+
+    included <- reactive({
+        dplyr::setdiff(termsearched(), excluded())
+        })
     
     checks <- reactive(
         included() %>% 
@@ -476,3 +472,5 @@ server <- function(input, output) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
+}
