@@ -38,3 +38,4 @@ rsconnect/
 
 # Data
 in/
+.DS_Store
