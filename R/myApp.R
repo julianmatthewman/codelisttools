@@ -116,7 +116,7 @@ ui <- fluidPage(
                                               htmlOutput("matchcolumn")),
 
                                    ),
-                                dataTableOutput("lefttable"),
+                                DT::dataTableOutput("lefttable"),
                             ),
                             column(6,
                                    fluidRow(
@@ -128,11 +128,11 @@ ui <- fluidPage(
                                               htmlOutput("selectUI_right")
                                        ),
                                    ),
-                                   dataTableOutput("righttable")
+                                   DT::dataTableOutput("righttable")
                             )
                         ),
                         fluidRow(
-                            dataTableOutput("joined")
+                            DT::dataTableOutput("joined")
                         )
                ),
                tabPanel("About",
