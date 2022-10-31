@@ -1,4 +1,8 @@
-app <- function(...) {
+myApp <- function(...) {
+    
+    # This shiny app is managed as an R package as described here:
+    # https://mastering-shiny.org/scaling-packaging.html#deploying-your-app-package
+    # In RStudio press Cmd/Ctrl + Shift + L to run devtools::load_all(), then run the app with myApp()
     
     library(shiny)
     library(rio)
@@ -177,8 +181,9 @@ server <- function(input, output) {
     #Make dynamically updating UI for picking the columns to search in
     output$select_search_cols <- renderUI({ 
         selectInput("cols", "Select columns to search in", names(codebrowser$data),
-                    ifelse("productname" %in% names(codebrowser$data), "productname", 
-                           ifelse("readterm" %in% names(codebrowser$data), "readterm", names(codebrowser$data)[[1]])),
+                    ifelse("DESCRIPTION" %in% names(codebrowser$data), "DESCRIPTION", 
+                           ifelse("productname" %in% names(codebrowser$data), "productname", 
+                                  ifelse("readterm" %in% names(codebrowser$data), "readterm", names(codebrowser$data)[[1]]))),
                     multiple = TRUE)
     })
     
