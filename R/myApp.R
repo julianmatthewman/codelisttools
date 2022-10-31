@@ -1,10 +1,6 @@
-#' Title
+#' The Codelist Tools Shiny App
 #'
 #' @import shiny
-#' @import DT
-#' @import dplyr
-#' @import purrr
-#' @import stringr
 #' @param ... 
 #'
 #' @return
@@ -21,7 +17,8 @@ myApp <- function(...) {
     
     #Import all browsers in the "in" folder
     paths <- dir("in", full.names = TRUE)
-    browsers <- map(paths, rio::import) %>% set_names(basename(tools::file_path_sans_ext(paths)))
+    browsers <- purrr::map(paths, rio::import) |> 
+        purrr::set_names(basename(tools::file_path_sans_ext(paths)))
     
     #product <- rio::import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
     
@@ -119,7 +116,7 @@ ui <- fluidPage(
                                               htmlOutput("matchcolumn")),
 
                                    ),
-                                dataTableOutput("lefttable")
+                                dataTableOutput("lefttable"),
                             ),
                             column(6,
                                    fluidRow(
@@ -207,8 +204,8 @@ server <- function(input, output) {
 # Get values from input ---------------------------------------------------
 
     #Make vectors from the inputs
-    searchterms <- reactive(unlist(strsplit(input$searchterms,";")))  %>% debounce(2000)
-    exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,";")))  %>% debounce(2000)
+    searchterms <- reactive(unlist(strsplit(input$searchterms,";")))  |> debounce(2000)
+    exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,";")))  |> debounce(2000)
     checkcol <- reactive(input$checkcol)
     
     cols <- reactive(input$cols)
@@ -225,13 +222,13 @@ server <- function(input, output) {
 
     termsearched <- reactive({
         validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
-        codebrowser$data %>% 
-            filter(if_any(c(!!! syms(cols())), ~ termsearch(.x, searchterms())))
+        codebrowser$data |> 
+            dplyr::filter(dplyr::if_any(c(!!! dplyr::syms(cols())), ~ termsearch(.x, searchterms())))
     })
     
     excluded <- reactive({
-        termsearched() %>% 
-            filter(if_any(c(!!! syms(cols())), ~ termsearch(.x, exclusionterms())))
+        termsearched() |> 
+            dplyr::filter(dplyr::if_any(c(!!! dplyr::syms(cols())), ~ termsearch(.x, exclusionterms())))
     })
 
     included <- reactive({
@@ -239,10 +236,10 @@ server <- function(input, output) {
         })
     
     checks <- reactive(
-        included() %>% 
-        group_by(!!! syms(checkcol())) %>% 
-        tally() %>% 
-        arrange(desc(n))
+        included() |> 
+            dplyr::group_by(!!! dplyr::syms(checkcol())) |> 
+            dplyr::tally() |> 
+            dplyr::arrange(desc(n))
     )
     
 
@@ -257,16 +254,16 @@ server <- function(input, output) {
     #Make included table with highlighted words
     termsearched_highlighted <- reactive({
         # Transform searchterms so they are in this form: term1|term2|term3|...
-        searchterms_highlightable <- searchterms() %>% 
-            strsplit(split = " ") %>% 
-            map(~paste(.x, collapse = "|")) %>% 
+        searchterms_highlightable <- searchterms() |> 
+            strsplit(split = " ") |> 
+            purrr::map(~paste(.x, collapse = "|")) |> 
             unlist()
         
-        termsearched() %>%
-            mutate(
-                across(any_of(input$cols),
-                       ~ str_replace_all(.x,
-                                         regex(paste(searchterms_highlightable, collapse="|"), ignore_case = TRUE),
+        termsearched() |>
+            dplyr::mutate(
+                dplyr::across(dplyr::any_of(input$cols),
+                       ~ stringr::str_replace_all(.x,
+                                         stringr::regex(paste(searchterms_highlightable, collapse="|"), ignore_case = TRUE),
                                          highlight_green
                        )
                 )
@@ -275,11 +272,11 @@ server <- function(input, output) {
     
     #Make excluded table with highlighted words
     excluded_highlighted <- reactive({
-        excluded() %>%
-            mutate(
-                across(any_of(input$cols),
-                       ~ str_replace_all(.x,
-                                         regex(paste(exclusionterms(), collapse="|"), ignore_case = TRUE),
+        excluded() |>
+            dplyr::mutate(
+                dplyr::across(dplyr::any_of(input$cols),
+                       ~ stringr::str_replace_all(.x,
+                                         stringr::regex(paste(exclusionterms(), collapse="|"), ignore_case = TRUE),
                                          highlight_yellow
                        )
                 )
@@ -358,10 +355,10 @@ server <- function(input, output) {
             print(tempdir())
             
             fs <- c("codelist.csv", "terms.csv")
-            write.csv(included(), "codelist.csv", row.names=FALSE, na = "")
-            write.csv(termtable(), "terms.csv", row.names=FALSE, na = "")
+            utils::write.csv(included(), "codelist.csv", row.names=FALSE, na = "")
+            utils::write.csv(termtable(), "terms.csv", row.names=FALSE, na = "")
 
-            zip(zipfile=filename, files=fs)
+            utils::zip(zipfile=filename, files=fs)
         },
         contentType = "application/zip"
     )
@@ -412,8 +409,8 @@ server <- function(input, output) {
       validate(need(input$matchcolumn %in% names(v$lefttable) | is.null(v$lefttable) | is.null(v$righttable) , "Loading"))
 
         if (!is.null(v$lefttable) & !is.null(v$righttable)) {
-            v$lefttable %>% 
-                mutate(match=ifelse(tolower(!!sym(input$matchcolumn)) %in% tolower(v$righttable[[input$matchcolumn]]),
+            v$lefttable |> 
+                dplyr::mutate(match=ifelse(tolower(!!dplyr::sym(input$matchcolumn)) %in% tolower(v$righttable[[input$matchcolumn]]),
                                     "yes",
                                     "no"))
         } else {v$lefttable}
@@ -423,8 +420,8 @@ server <- function(input, output) {
       validate(need(input$matchcolumn %in% names(v$lefttable) | is.null(v$lefttable) | is.null(v$righttable) , "Loading"))
       
         if (!is.null(v$righttable) & !is.null(v$lefttable)) {
-            v$righttable %>% 
-                mutate(match=ifelse(tolower(!!sym(input$matchcolumn)) %in% tolower(v$lefttable[[input$matchcolumn]]),
+            v$righttable |> 
+                dplyr::mutate(match=ifelse(tolower(!!dplyr::sym(input$matchcolumn)) %in% tolower(v$lefttable[[input$matchcolumn]]),
                                     "yes",
                                     "no"))
         } else {v$righttable}
@@ -462,18 +459,18 @@ server <- function(input, output) {
 
     dtoptions2 <- list(pageLength = 20, scrollX = TRUE)
     
-    output$lefttable <- renderDataTable({ 
-        temp <- datatable(lefttable_joined()[,displaycolumns_left(), drop=FALSE], options = dtoptions2) 
+    output$lefttable <- DT::renderDataTable({ #Need to use DT::renderDataTable, not from shiny::renderDataTable, when rendering DT::datatable()
+        temp <- DT::datatable(lefttable_joined()[,displaycolumns_left(), drop=FALSE], options = dtoptions2) 
         
         if (!is.null(v$righttable) & !is.null(v$lefttable) & ("match" %in% colnames(lefttable_joined()[,displaycolumns_left(), drop=FALSE]))) {
-            temp %>% formatStyle("match", target = "row", backgroundColor = styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
+            temp |> DT::formatStyle("match", target = "row", backgroundColor = DT::styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
         } else { temp}
     })
-    output$righttable <- renderDataTable({ 
-        temp <- datatable(righttable_joined()[,displaycolumns_right(), drop=FALSE], options = dtoptions2) 
+    output$righttable <- DT::renderDataTable({ 
+        temp <- DT::datatable(righttable_joined()[,displaycolumns_right(), drop=FALSE], options = dtoptions2) 
         
         if (!is.null(v$righttable) & !is.null(v$lefttable) & ("match" %in% colnames(righttable_joined()[,displaycolumns_right(), drop=FALSE]))) {
-            temp %>% formatStyle("match", target = "row", backgroundColor = styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
+            temp |> DT::formatStyle("match", target = "row", backgroundColor = DT::styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
         } else { temp}
     })
     

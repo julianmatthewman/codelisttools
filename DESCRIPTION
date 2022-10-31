@@ -19,8 +19,10 @@ Imports:
     DT,
     haven,
     htmltools,
+    markdown,
     pkgload,
     purrr,
     rio,
     shiny,
+    stringi,
     stringr
