@@ -1,24 +1,29 @@
+#' Title
+#'
+#' @import shiny
+#' @import DT
+#' @import dplyr
+#' @import purrr
+#' @import stringr
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 myApp <- function(...) {
     
     # This shiny app is managed as an R package as described here:
     # https://mastering-shiny.org/scaling-packaging.html#deploying-your-app-package
     # In RStudio press Cmd/Ctrl + Shift + L to run devtools::load_all(), then run the app with myApp()
-    
-    library(shiny)
-    library(rio)
-    library(DT)
-    library(bslib)
-    library(haven)
-    library(markdown)
-    library(tidyverse)
-    
+    # To deploy call rsconnect::deployApp()
 
     
     #Import all browsers in the "in" folder
     paths <- dir("in", full.names = TRUE)
-    browsers <- map(paths, import) %>% set_names(basename(tools::file_path_sans_ext(paths)))
+    browsers <- map(paths, rio::import) %>% set_names(basename(tools::file_path_sans_ext(paths)))
     
-    #product <- import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
+    #product <- rio::import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
     
 # UI ----------------------------------------------------------------------
 
@@ -38,7 +43,7 @@ ui <- fluidPage(
                                 selectInput("select_codebrowser",
                                             "Select browser",
                                             names(browsers),
-                                            "ICD10_Edition5_CodesAndTitlesAndMetadata_GB_20160401"),
+                                            "ICD10_Edition5_GB_20160401"),
                                 fileInput("import_codebrowser", label=NULL),
                             
                                 
@@ -171,7 +176,7 @@ server <- function(input, output) {
         inFile <- input$import_codebrowser
         if (is.null(inFile))
             return(NULL)
-        codebrowser$data <- import(inFile$datapath)
+        codebrowser$data <- rio::import(inFile$datapath)
     })
     
 
@@ -384,13 +389,13 @@ server <- function(input, output) {
         inFile <- input$import_codelist_left
         if (is.null(inFile))
             return(NULL)
-        v$lefttable <- import(inFile$datapath)
+        v$lefttable <- rio::import(inFile$datapath)
     })  
     observeEvent(input$import_codelist_right, {
         inFile <- input$import_codelist_right
         if (is.null(inFile))
             return(NULL)
-        v$righttable <- import(inFile$datapath)
+        v$righttable <- rio::import(inFile$datapath)
     })  
     
 

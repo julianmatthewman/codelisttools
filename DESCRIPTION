@@ -14,11 +14,11 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Imports: 
-    bslib,
+    crosstalk,
     dplyr,
     DT,
     haven,
-    markdown,
+    htmltools,
     pkgload,
     purrr,
     rio,

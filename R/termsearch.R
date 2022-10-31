@@ -38,11 +38,3 @@ process_terms <- function(.searchterms) {
     # Merge quoted and unquoted back together
     c(quoted, unquoted)
 }
-
-
-termsearch_cols <- function(.data, .cols, .searchterms) {
-    
-    # Filter .data to rows where if in any of the .cols ...
-    filter(.data, if_any(c(!!! syms(.cols)), ~ termsearch(.x, .searchterms))
-    )
-}
