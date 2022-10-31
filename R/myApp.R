@@ -52,7 +52,7 @@ ui <- fluidPage(
                                               tags$i(
                                                   class = "glyphicon glyphicon-info-sign", 
                                                   style = "color:#0072B2;",
-                                                  title = "Enter terms to search for separated by a semicolon (;) without spaces. E.g.: methotrexate;ciclosporin;azathioprin. To require that all off multiple terms are present in one entry, wrap terms in (?=.*term1)(?=.*term2).*?. E.g.: (?=.*hip)(?=.*fracture).*$ searches for entries that contain both hip and fracture.")),
+                                                  title = 'For search rules see "About" Tab')),
                                               "diabetes"),
                                 textInput("exclusionterms",
                                           "Exclusionterms",
@@ -85,15 +85,15 @@ ui <- fluidPage(
                                 
                                 fluidRow(id="withborder",
                                          h4("Initial codelist"),
-                                         dataTableOutput("termsearched"),
+                                         shiny::dataTableOutput("termsearched"),
                                 ),
                                 fluidRow(id="withborder",
                                          h4("Excluded"),
-                                         dataTableOutput("excluded"),
+                                         shiny::dataTableOutput("excluded"),
                                 ),
                                 fluidRow(id="withborder",
                                          h4("Final codelist"),
-                                         dataTableOutput("included"),
+                                         shiny::dataTableOutput("included"),
                                 ),
                                 fluidRow(h3("Checks"),
                                          htmlOutput("select_check_cols"),
@@ -228,7 +228,11 @@ server <- function(input, output) {
     
     excluded <- reactive({
         termsearched() |> 
-            dplyr::filter(dplyr::if_any(c(!!! dplyr::syms(cols())), ~ termsearch(.x, exclusionterms())))
+            dplyr::filter(dplyr::if_any(c(!!! dplyr::syms(cols())), 
+                                        ~ termsearch(.x, exclusionterms()) &
+                                            !(tolower(.x) %in% tolower(searchterms())) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
+                                        )
+                          ) 
     })
 
     included <- reactive({
