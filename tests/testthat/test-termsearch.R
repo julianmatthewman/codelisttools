@@ -49,3 +49,18 @@ test_that("Wildcards allow partial word searching", {
                             c("diabet*", "pat*")),
                  c(TRUE, TRUE, TRUE))
 })
+
+test_that("Detects non-aphanumeric characters", {
+    expect_equal(termsearch(c("H/O Diabetes"),
+                            c("h/o")),
+                 c(TRUE))
+    expect_equal(termsearch(c("HO: Diabetes"), #The colon ":" character is not part of a word within boundaries https://stackoverflow.com/questions/4134605/regex-and-the-colon
+                            c("ho:")),
+                 c(TRUE))
+    expect_equal(termsearch(c("H/O: Diabetes"),
+                            c("h/o:")),
+                 c(TRUE))
+    expect_equal(termsearch(c("H/O: Diabetes", "HO: Diabetes", "H/O: Diabetes"),
+                            c("h/o")),
+                 c(TRUE, FALSE, TRUE))
+})

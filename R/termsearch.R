@@ -26,13 +26,13 @@ process_terms <- function(.searchterms) {
     quoted <- quoted %>%
         stringr::str_sub(start = 2, end = -2)
     
-    # Transform unquoted searchterms so they are in this form: (?=.*(\\bterm1\\b))(?=.*(\\bterm2\\b))
+    # Transform unquoted searchterms so they are in this form: (?=.*(\\bterm1(\\b|\\s)))))(?=.*(\\bterm2(\\b|\\s)))))
     unquoted <- unquoted %>%
         stringr::str_replace_all("\\*", "\\.*") %>%
         strsplit(split = " ") %>%
         purrr::map(~paste0("(?=.*(\\b",
-                           paste(.x, collapse = "\\b))(?=.*(\\b"),
-                           "\\b))")) %>%
+                           paste(.x, collapse = "(\\b|\\s)))(?=.*(\\b"),
+                           "(\\b|\\s)))")) %>%
         unlist()
     
     # Merge quoted and unquoted back together
