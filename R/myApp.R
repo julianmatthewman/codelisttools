@@ -226,20 +226,22 @@ server <- function(input, output) {
 
     termsearched <- reactive({
         validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
-        searchterms <- ifelse(termset_search_method()==TRUE, 
-                              process_terms(searchterms()),
-                              searchterms())
-        codebrowser$data |> 
-            dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms))
+        if(termset_search_method()==TRUE)
+            codebrowser$data |> 
+            dplyr::filter(termsearch(eval(dplyr::sym(cols())), process_terms(searchterms())))
+        else
+            codebrowser$data |> 
+            dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms()))
     })
     
     excluded <- reactive({
-        exclusionterms <- ifelse(termset_search_method()==TRUE, 
-                              process_terms(exclusionterms()),
-                              exclusionterms())
-        termsearched() |> 
-            dplyr::filter(termsearch(eval(dplyr::sym(cols())), exclusionterms) &
-                                            !(tolower(exclusionterms) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
+        if(termset_search_method()==TRUE)
+            termsearched() |> 
+            dplyr::filter(termsearch(eval(dplyr::sym(cols())), process_terms(exclusionterms())) &
+                                            !(tolower(exclusionterms()) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
+        else
+            termsearched() |> 
+            dplyr::filter(termsearch(eval(dplyr::sym(cols())), exclusionterms())) 
     })
 
     included <- reactive({
