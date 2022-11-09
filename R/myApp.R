@@ -46,12 +46,14 @@ ui <- fluidPage(
                                 
                                 hr(),
                                 
-                                textInput("searchterms",
+                                textAreaInput("searchterms",
                                           "Searchterms",
-                                          "diabetes"),
-                                textInput("exclusionterms",
+                                          "diabetes",
+                                          resize = "vertical"),
+                                textAreaInput("exclusionterms",
                                           "Exclusionterms",
-                                          "insipidus"),
+                                          "insipidus",
+                                          resize = "vertical"),
                                 htmlOutput("select_search_cols"),
                                 checkboxInput("termset_search_method",
                                               label = tags$span(
@@ -60,9 +62,6 @@ ui <- fluidPage(
                                                       class = "glyphicon glyphicon-info-sign", 
                                                       style = "color:#0072B2;",
                                                       title = 'For search rules see "About" Tab'))),
-                                verbatimTextOutput("searchterms"),
-                                verbatimTextOutput("exclusionterms"),
-                                verbatimTextOutput("cols"),
                                 verbatimTextOutput("randomstrings"),
                                 
                                 hr(),
@@ -208,8 +207,8 @@ server <- function(input, output) {
     termset_search_method <- reactive(input$termset_search_method)
     
     #Make vectors from the inputs
-    searchterms <- reactive(unlist(strsplit(input$searchterms,";")))  |> debounce(2000)
-    exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,";")))  |> debounce(2000)
+    searchterms <- reactive(unlist(strsplit(input$searchterms,"\n")))  |> debounce(2000)
+    exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,"\n")))  |> debounce(2000)
     checkcol <- reactive(input$checkcol)
     
     cols <- reactive(input$cols)
