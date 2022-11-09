@@ -186,7 +186,7 @@ server <- function(input, output) {
                     ifelse("DESCRIPTION" %in% names(codebrowser$data), "DESCRIPTION", 
                            ifelse("productname" %in% names(codebrowser$data), "productname", 
                                   ifelse("readterm" %in% names(codebrowser$data), "readterm", names(codebrowser$data)[[1]]))),
-                    multiple = TRUE)
+                    multiple = FALSE)
     })
     
     #Make dynamically updating UI for picking the columns to display
@@ -223,16 +223,13 @@ server <- function(input, output) {
     termsearched <- reactive({
         validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
         codebrowser$data |> 
-            dplyr::filter(dplyr::if_any(c(!!! dplyr::syms(cols())), ~ termsearch(.x, searchterms())))
+            dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms()))
     })
     
     excluded <- reactive({
         termsearched() |> 
-            dplyr::filter(dplyr::if_any(c(!!! dplyr::syms(cols())), 
-                                        ~ termsearch(.x, exclusionterms()) &
-                                            !(tolower(.x) %in% tolower(searchterms())) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
-                                        )
-                          ) 
+            dplyr::filter(termsearch(eval(dplyr::sym(cols())), exclusionterms()) &
+                                            !(tolower(exclusionterms()) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
     })
 
     included <- reactive({
