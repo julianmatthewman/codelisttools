@@ -47,17 +47,19 @@ ui <- fluidPage(
                                 hr(),
                                 
                                 textInput("searchterms",
-                                          label = tags$span(
-                                              "Searchterms", 
-                                              tags$i(
-                                                  class = "glyphicon glyphicon-info-sign", 
-                                                  style = "color:#0072B2;",
-                                                  title = 'For search rules see "About" Tab')),
-                                              "diabetes"),
+                                          "Searchterms",
+                                          "diabetes"),
                                 textInput("exclusionterms",
                                           "Exclusionterms",
                                           "insipidus"),
                                 htmlOutput("select_search_cols"),
+                                checkboxInput("termset_search_method",
+                                              label = tags$span(
+                                                  "Termset search method", 
+                                                  tags$i(
+                                                      class = "glyphicon glyphicon-info-sign", 
+                                                      style = "color:#0072B2;",
+                                                      title = 'For search rules see "About" Tab'))),
                                 verbatimTextOutput("searchterms"),
                                 verbatimTextOutput("exclusionterms"),
                                 verbatimTextOutput("cols"),
@@ -203,6 +205,8 @@ server <- function(input, output) {
     
 # Get values from input ---------------------------------------------------
 
+    termset_search_method <- reactive(input$termset_search_method)
+    
     #Make vectors from the inputs
     searchterms <- reactive(unlist(strsplit(input$searchterms,";")))  |> debounce(2000)
     exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,";")))  |> debounce(2000)
@@ -222,14 +226,20 @@ server <- function(input, output) {
 
     termsearched <- reactive({
         validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
+        searchterms <- ifelse(termset_search_method()==TRUE, 
+                              process_terms(searchterms()),
+                              searchterms())
         codebrowser$data |> 
-            dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms()))
+            dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms))
     })
     
     excluded <- reactive({
+        exclusionterms <- ifelse(termset_search_method()==TRUE, 
+                              process_terms(exclusionterms()),
+                              exclusionterms())
         termsearched() |> 
-            dplyr::filter(termsearch(eval(dplyr::sym(cols())), exclusionterms()) &
-                                            !(tolower(exclusionterms()) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
+            dplyr::filter(termsearch(eval(dplyr::sym(cols())), exclusionterms) &
+                                            !(tolower(exclusionterms) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
     })
 
     included <- reactive({

@@ -8,7 +8,7 @@
 
 #' @export
 termsearch <- function(lookup, searchterms) {
-    stringr::str_detect(lookup, stringr::regex(paste(process_terms(searchterms), collapse = '|'), ignore_case = TRUE))
+    stringr::str_detect(lookup, stringr::regex(paste(searchterms, collapse = '|'), ignore_case = TRUE))
 }
 
 
@@ -23,16 +23,16 @@ process_terms <- function(.searchterms) {
     unquoted <- .searchterms[!grepl('"(?:\\.|[^"\\])*"', .searchterms)]
     
     #Remove quotes from quoted searchterms
-    quoted <- quoted %>%
+    quoted <- quoted |>
         stringr::str_sub(start = 2, end = -2)
     
     # Transform unquoted searchterms so they are in this form: (?=.*(\\bterm1(\\b|\\s)))))(?=.*(\\bterm2(\\b|\\s)))))
-    unquoted <- unquoted %>%
-        stringr::str_replace_all("\\*", "\\.*") %>%
-        strsplit(split = " ") %>%
+    unquoted <- unquoted |>
+        stringr::str_replace_all("\\*", "\\.*") |>
+        strsplit(split = " ") |>
         purrr::map(~paste0("(?=.*(\\b",
                            paste(.x, collapse = "(\\b|\\s)))(?=.*(\\b"),
-                           "(\\b|\\s)))")) %>%
+                           "(\\b|\\s)))")) |>
         unlist()
     
     # Merge quoted and unquoted back together
