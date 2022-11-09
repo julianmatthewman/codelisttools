@@ -7,8 +7,8 @@
 #' @details Uses the search strategy as described in: Williams, R. et al. (2019) ‘Term sets: A transparent and reproducible representation of clinical code sets’, PLOS ONE. Edited by I. Olier, 14(2), p. e0212291. Available at: https://doi.org/10.1371/journal.pone.0212291.
 
 #' @export
-termsearch <- function(lookup, searchterms) {
-    stringr::str_detect(lookup, stringr::regex(paste(process_terms(searchterms), collapse = '|'), ignore_case = TRUE))
+termsearch <- function(lookup, processed_terms) {
+    stringr::str_detect(lookup, stringr::regex(processed_terms, ignore_case = TRUE))
 }
 
 
@@ -36,5 +36,5 @@ process_terms <- function(.searchterms) {
         unlist()
     
     # Merge quoted and unquoted back together
-    c(quoted, unquoted)
+    paste(c(quoted, unquoted), collapse = '|')
 }

@@ -219,6 +219,9 @@ server <- function(input, output) {
     
 
 # Make the Tables ---------------------------------------------------------
+    
+    searchterms_processed <- reactive(process_terms(searchterms))
+    exclusionterms_processed <- reactive(process_terms(exclusionterms))
 
     termsearched <- reactive({
         validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
