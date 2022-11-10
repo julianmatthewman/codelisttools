@@ -183,7 +183,7 @@ server <- function(input, output) {
     
     #Make dynamically updating UI for picking the columns to search in
     output$select_search_cols <- renderUI({ 
-        selectInput("cols", "Select columns to search in", names(codebrowser$data),
+        selectInput("cols", "Select column to search in", names(codebrowser$data),
                     ifelse("DESCRIPTION" %in% names(codebrowser$data), "DESCRIPTION", 
                            ifelse("productname" %in% names(codebrowser$data), "productname", 
                                   ifelse("readterm" %in% names(codebrowser$data), "readterm", names(codebrowser$data)[[1]]))),
