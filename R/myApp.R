@@ -107,10 +107,10 @@ ui <- fluidPage(
                         fluidRow(
                             column(6,
                                    fluidRow(
-                                       column(3,
+                                       column(3, style = "margin-top: 25px;",
                                               fileInput("import_codelist_left", label=NULL)),
-                                       column(3,
-                                              actionButton("get_codelist_left", "Use from codelist maker")),
+                                       column(3, style = "margin-top: 25px;",
+                                              actionButton("get_codelist_left", "from codelist maker")),
                                        column(3,
                                               htmlOutput("selectUI_left")),
                                        column(3,
@@ -121,10 +121,10 @@ ui <- fluidPage(
                             ),
                             column(6,
                                    fluidRow(
-                                       column(4,
+                                       column(4, style = "margin-top: 25px;",
                                               fileInput("import_codelist_right", label=NULL)),
-                                       column(4,
-                                              actionButton("get_codelist_right", "Use from codelist maker")),
+                                       column(4, style = "margin-top: 25px;",
+                                              actionButton("get_codelist_right", "from codelist maker")),
                                        column(4,
                                               htmlOutput("selectUI_right")
                                        ),
