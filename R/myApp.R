@@ -268,8 +268,9 @@ server <- function(input, output) {
     
     descendants <- reactive({
         codebrowser$data |> 
-            dplyr::filter(stringr::str_starts(CODE, paste(termsearched()$CODE, collapse = "|")) &
-                          !(CODE %in% termsearched()$CODE)) 
+            dplyr::filter(stringr::str_starts(eval(dplyr::sym(codecol())), paste(termsearched()[[codecol()]], collapse = "|"))
+                          & !(eval(dplyr::sym(codecol())) %in% termsearched()[[codecol()]]) 
+                          ) 
     })
     
 
@@ -333,15 +334,17 @@ server <- function(input, output) {
         included()[,displaycolumns(), drop=FALSE]
     }, options = dtoptions)
     
+    #Render descendants
+    output$descendants <- DT::renderDataTable({ 
+        descendants()[,displaycolumns(), drop=FALSE]
+    }, options = dtoptions)
+    
     #Render extra table containing checks
     output$checks <- renderTable(
         checks()
     )
     
-    #Render descendants
-    output$descendants <- DT::renderDataTable({ 
-        descendants()[,displaycolumns(), drop=FALSE]
-    }, options = dtoptions)
+
     
     #Print values
     output$searchterms<-renderPrint({
