@@ -86,15 +86,15 @@ ui <- fluidPage(
                                 
                                 fluidRow(id="withborder",
                                          h4("Initial codelist"),
-                                         shiny::dataTableOutput("termsearched"),
+                                         DT::dataTableOutput("termsearched"),
                                 ),
                                 fluidRow(id="withborder",
                                          h4("Excluded"),
-                                         shiny::dataTableOutput("excluded"),
+                                         DT::dataTableOutput("excluded"),
                                 ),
                                 fluidRow(id="withborder",
                                          h4("Final codelist"),
-                                         shiny::dataTableOutput("included"),
+                                         DT::dataTableOutput("included"),
                                 ),
                                 fluidRow(h3("Checks"),
                                          htmlOutput("select_check_cols"),
@@ -303,15 +303,15 @@ server <- function(input, output) {
     # Set which tables to display
    
     #Render tables
-    output$termsearched <- renderDataTable({ 
+    output$termsearched <- DT::renderDataTable({ 
         termsearched_highlighted()[,displaycolumns(), drop=FALSE] 
         }, escape = FALSE, options = dtoptions)
     
-    output$excluded <- renderDataTable({ 
+    output$excluded <- DT::renderDataTable({ 
         excluded_highlighted()[,displaycolumns(), drop=FALSE]
     }, escape = FALSE, options = dtoptions) #Need escape = FALSE if including HTML formatting
     
-    output$included <- renderDataTable({ 
+    output$included <- DT::renderDataTable({ 
         included()[,displaycolumns(), drop=FALSE]
     }, options = dtoptions)
     
