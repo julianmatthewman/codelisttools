@@ -62,6 +62,7 @@ ui <- fluidPage(
                                                       class = "glyphicon glyphicon-info-sign", 
                                                       style = "color:#0072B2;",
                                                       title = 'For search rules see "About" Tab'))),
+                                htmlOutput("select_code_cols"),
                                 verbatimTextOutput("randomstrings"),
                                 
                                 hr(),
@@ -95,6 +96,10 @@ ui <- fluidPage(
                                 fluidRow(id="withborder",
                                          h4("Final codelist"),
                                          DT::dataTableOutput("included"),
+                                ),
+                                fluidRow(id="withborder",
+                                         h4("Unmatched descendants"),
+                                         DT::dataTableOutput("descendants"),
                                 ),
                                 fluidRow(h3("Checks"),
                                          htmlOutput("select_check_cols"),
@@ -200,6 +205,12 @@ server <- function(input, output) {
         selectInput("checkcol", "Select column to check",names(codebrowser$data),
                     ifelse("bnftext" %in% names(codebrowser$data), "bnftext", names(codebrowser$data)[[1]]))
     })
+    
+    #Make dynamically updating UI for picking the column to match for descendants
+    output$select_code_cols <- renderUI({ 
+        selectInput("codecol", "Select column with codes",names(codebrowser$data),
+                    ifelse("CODE" %in% names(codebrowser$data), "CODE", names(codebrowser$data)[[1]]))
+    })
   
     
 # Get values from input ---------------------------------------------------
@@ -210,6 +221,7 @@ server <- function(input, output) {
     searchterms <- reactive(unlist(strsplit(input$searchterms,"\n")))  |> debounce(2000)
     exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,"\n")))  |> debounce(2000)
     checkcol <- reactive(input$checkcol)
+    codecol <- reactive(input$codecol)
     
     cols <- reactive(input$cols)
 
@@ -253,6 +265,12 @@ server <- function(input, output) {
             dplyr::tally() |> 
             dplyr::arrange(desc(n))
     )
+    
+    descendants <- reactive({
+        codebrowser$data |> 
+            dplyr::filter(stringr::str_starts(CODE, paste(termsearched()$CODE, collapse = "|")) &
+                          !(CODE %in% termsearched()$CODE)) 
+    })
     
 
 # Make extra highlighted Tables -------------------------------------------
@@ -319,6 +337,11 @@ server <- function(input, output) {
     output$checks <- renderTable(
         checks()
     )
+    
+    #Render descendants
+    output$descendants <- DT::renderDataTable({ 
+        descendants()[,displaycolumns(), drop=FALSE]
+    }, options = dtoptions)
     
     #Print values
     output$searchterms<-renderPrint({
