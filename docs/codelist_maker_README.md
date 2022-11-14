@@ -14,6 +14,10 @@ You will see three tables:
 2.  The table of excluded entries found in the prior table using the exclusionterms
 3.  The table containing the final codelist, which is the inital table, without the excluded entries
 
+### Checks
+
+Below, optional checks can be enabled. **Unmatched descendants** will show any not included descendants of any included code (e.g. if code "E10" is included, will show all codes that start with "E10", such as "E10.1", "E10.2", etc., that aren't already included in the final codelist). **Cross-tabulation** will show a contingency table on a specified column.
+
 ### Search Rules
 
 #### Default

@@ -43,7 +43,6 @@ ui <- fluidPage(
                                             "ICD10_Edition5_GB_20160401"),
                                 fileInput("import_codebrowser", label=NULL),
                             
-                                
                                 hr(),
                                 
                                 textAreaInput("searchterms",
@@ -81,6 +80,7 @@ ui <- fluidPage(
                                 tags$head(tags$style("#termsearched  {white-space: nowrap;  }"),
                                           tags$style("#excluded  {white-space: nowrap;  }"),
                                           tags$style("#included  {white-space: nowrap;  }"),
+                                          tags$style("#descendants  {white-space: nowrap;  }"),
                                           tags$style(HTML("#withborder  {border: 4px solid black;}"))),
 
                                 
@@ -96,8 +96,19 @@ ui <- fluidPage(
                                          h4("Final codelist"),
                                          DT::dataTableOutput("included"),
                                 ),
-                                fluidRow(h3("Checks"),
-                                         htmlOutput("select_check_cols"),
+                                
+                                hr(),
+                                fluidRow(id="withborder", h4("Checks")),
+                                fluidRow(id="withborder",
+                                         column(4, h4("Unmatched descendants")),
+                                         column(4, checkboxInput("descendant_matching", "Enable descendant searching, on column:")),
+                                         column(4, style = "margin-top: 5px;", htmlOutput("select_code_cols")),
+                                         DT::dataTableOutput("descendants"),
+                                ),
+                                fluidRow(id="withborder",
+                                         column(4, h4("Cross-tabulation")),
+                                         column(4, checkboxInput("crosstab", "Enable cross-tabulation, on column:")),
+                                         column(4, style = "margin-top: 5px;", htmlOutput("select_check_cols")),
                                          tableOutput("checks"),
                                 ),
                             )
@@ -197,19 +208,28 @@ server <- function(input, output) {
     
     #Make dynamically updating UI for picking the column to check
     output$select_check_cols <- renderUI({ 
-        selectInput("checkcol", "Select column to check",names(codebrowser$data),
-                    ifelse("bnftext" %in% names(codebrowser$data), "bnftext", names(codebrowser$data)[[1]]))
+        selectInput("checkcol", label=NULL, names(codebrowser$data),
+                    ifelse("USAGE" %in% names(codebrowser$data), "USAGE", names(codebrowser$data)[[1]]))
+    })
+    
+    #Make dynamically updating UI for picking the column to match for descendants
+    output$select_code_cols <- renderUI({ 
+        selectInput("codecol", label=NULL, names(codebrowser$data),
+                    ifelse("CODE" %in% names(codebrowser$data), "CODE", names(codebrowser$data)[[1]]))
     })
   
     
 # Get values from input ---------------------------------------------------
 
     termset_search_method <- reactive(input$termset_search_method)
+    descendant_matching <- reactive(input$descendant_matching)
+    crosstab <- reactive(input$crosstab)
     
     #Make vectors from the inputs
     searchterms <- reactive(unlist(strsplit(input$searchterms,"\n")))  |> debounce(2000)
     exclusionterms <- reactive(unlist(strsplit(input$exclusionterms,"\n")))  |> debounce(2000)
     checkcol <- reactive(input$checkcol)
+    codecol <- reactive(input$codecol)
     
     cols <- reactive(input$cols)
 
@@ -247,12 +267,21 @@ server <- function(input, output) {
         dplyr::setdiff(termsearched(), excluded())
         })
     
-    checks <- reactive(
+    checks <- reactive({
+        validate(need(crosstab() == TRUE, message = FALSE)) 
         included() |> 
             dplyr::group_by(!!! dplyr::syms(checkcol())) |> 
             dplyr::tally() |> 
             dplyr::arrange(desc(n))
-    )
+    })
+    
+    descendants <- reactive({
+        validate(need(descendant_matching() == TRUE, message = FALSE)) 
+        codebrowser$data |> 
+            dplyr::filter(stringr::str_starts(eval(dplyr::sym(codecol())), paste(included()[[codecol()]], collapse = "|"))
+                          & !(eval(dplyr::sym(codecol())) %in% included()[[codecol()]]) 
+                          ) 
+    })
     
 
 # Make extra highlighted Tables -------------------------------------------
@@ -315,10 +344,17 @@ server <- function(input, output) {
         included()[,displaycolumns(), drop=FALSE]
     }, options = dtoptions)
     
+    #Render descendants
+    output$descendants <- DT::renderDataTable({ 
+        descendants()[,displaycolumns(), drop=FALSE]
+    }, options = dtoptions)
+    
     #Render extra table containing checks
     output$checks <- renderTable(
         checks()
     )
+    
+
     
     #Print values
     output$searchterms<-renderPrint({
