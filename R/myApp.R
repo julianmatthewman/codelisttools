@@ -276,7 +276,13 @@ server <- function(input, output) {
     })
     
     descendants <- reactive({
-        validate(need(descendant_matching() == TRUE, message = FALSE)) 
+        validate(
+            need(codecol() %in% names(codebrowser$data), "Loading"),
+            need(codecol() %in% names(included()), "Loading"), # need to validate to avoid flashing error message
+            need(searchterms(), "No searchterms provided"),
+            need(nrow(included())>0, "Nothing included"),
+            need(descendant_matching() == TRUE, message = FALSE)
+        )
         codebrowser$data |> 
             dplyr::filter(stringr::str_starts(eval(dplyr::sym(codecol())), paste(included()[[codecol()]], collapse = "|"))
                           & !(eval(dplyr::sym(codecol())) %in% included()[[codecol()]]) 
