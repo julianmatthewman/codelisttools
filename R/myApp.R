@@ -123,12 +123,10 @@ ui <- fluidPage(
                                        column(3, style = "margin-top: 25px;",
                                               actionButton("get_codelist_left", "from codelist maker")),
                                        column(3,
-                                              htmlOutput("selectUI_left")),
-                                       column(3,
                                               htmlOutput("matchcolumn")),
 
                                    ),
-                                DT::dataTableOutput("lefttable"),
+                                   compTableModuleUI("lefttable"),
                             ),
                             column(6,
                                    fluidRow(
@@ -136,12 +134,9 @@ ui <- fluidPage(
                                               fileInput("import_codelist_right", label=NULL)),
                                        column(4, style = "margin-top: 25px;",
                                               actionButton("get_codelist_right", "from codelist maker")),
-                                       column(4,
-                                              htmlOutput("selectUI_right")
                                        ),
                                    ),
-                                   DT::dataTableOutput("righttable")
-                            )
+                            compTableModuleUI("righttable")
                         ),
                         fluidRow(
                             DT::dataTableOutput("joined")
@@ -457,76 +452,21 @@ server <- function(input, output) {
         selectInput("matchcolumn", label = "Match on", intersect(names(v$lefttable), names(v$righttable)),
                     NULL)
     })
-    
-    lefttable_joined <- reactive({
-      validate(need(length(intersect(names(v$lefttable), names(v$righttable)))>0 | is.null(v$lefttable) | is.null(v$righttable), "Tables need at least one matching column"))
-      validate(need(input$matchcolumn %in% names(v$lefttable) | is.null(v$lefttable) | is.null(v$righttable) , "Loading"))
-
-        if (!is.null(v$lefttable) & !is.null(v$righttable)) {
-            v$lefttable |> 
-                dplyr::mutate(match=ifelse(tolower(!!dplyr::sym(input$matchcolumn)) %in% tolower(v$righttable[[input$matchcolumn]]),
-                                    "yes",
-                                    "no"))
-        } else {v$lefttable}
-    })
-    righttable_joined <- reactive({
-      validate(need(length(intersect(names(v$lefttable), names(v$righttable)))>0 | is.null(v$lefttable) | is.null(v$righttable), "Tables need at least one matching column"))
-      validate(need(input$matchcolumn %in% names(v$lefttable) | is.null(v$lefttable) | is.null(v$righttable) , "Loading"))
-      
-        if (!is.null(v$righttable) & !is.null(v$lefttable)) {
-            v$righttable |> 
-                dplyr::mutate(match=ifelse(tolower(!!dplyr::sym(input$matchcolumn)) %in% tolower(v$lefttable[[input$matchcolumn]]),
-                                    "yes",
-                                    "no"))
-        } else {v$righttable}
-    })
-    
-
-    
-    
-# Pick which columns should be displayed  -------------------
-
-    #Make dynamically updating UI for picking the columns to be displayed
-    output$selectUI_left <- renderUI({ 
-        selectInput("selectUI_left", label = "Display", names(lefttable_joined()), multiple = TRUE)
-    })
-    output$selectUI_right <- renderUI({ 
-        selectInput("selectUI_right", label = "Display", names(righttable_joined()), multiple = TRUE)
-    })
-    
-    #Display all columns if nothing is selected
-    displaycolumns_left <- reactive({
-        if (!is.null(input$selectUI_left)) {
-            input$selectUI_left
-        } else { names(lefttable_joined())}
-    })
-    displaycolumns_right <- reactive({
-        if (!is.null(input$selectUI_right)) {
-            input$selectUI_right
-        } else { names(righttable_joined())}
-    })
-    
-
-
-
+ 
 # Render the tables -------------------------------------------------------
 
-    dtoptions2 <- list(pageLength = 20, scrollX = TRUE)
-    
-    output$lefttable <- DT::renderDataTable({ #Need to use DT::renderDataTable, not from shiny::renderDataTable, when rendering DT::datatable()
-        temp <- DT::datatable(lefttable_joined()[,displaycolumns_left(), drop=FALSE], options = dtoptions2) 
-        
-        if (!is.null(v$righttable) & !is.null(v$lefttable) & ("match" %in% colnames(lefttable_joined()[,displaycolumns_left(), drop=FALSE]))) {
-            temp |> DT::formatStyle("match", target = "row", backgroundColor = DT::styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
-        } else { temp}
-    })
-    output$righttable <- DT::renderDataTable({ 
-        temp <- DT::datatable(righttable_joined()[,displaycolumns_right(), drop=FALSE], options = dtoptions2) 
-        
-        if (!is.null(v$righttable) & !is.null(v$lefttable) & ("match" %in% colnames(righttable_joined()[,displaycolumns_right(), drop=FALSE]))) {
-            temp |> DT::formatStyle("match", target = "row", backgroundColor = DT::styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
-        } else { temp}
-    })
+    compTableModule(
+      id = "righttable",
+      thistable = reactive(v$righttable),
+      othertable = reactive(v$lefttable),
+      matchcolumn = reactive(input$matchcolumn)
+    )
+    compTableModule(
+        id = "lefttable",
+        thistable = reactive(v$lefttable),
+        othertable = reactive(v$righttable),
+        matchcolumn = reactive(input$matchcolumn)
+    )
     
     
 }
