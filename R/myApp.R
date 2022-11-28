@@ -116,10 +116,16 @@ myApp <- function(...) {
                    ),
                    tabPanel("Codelist Comparison", 
                             fluidRow(
-                                compTableModuleUI("left"),
-                                compTableModuleUI("right")
+                                column(6,
+                                    loadTableModuleUI("left"),
+                                    matchcolModuleUI("both"),
+                                    joinRenderTableModuleUI("left")
                                 ),
-                                
+                                column(6,
+                                    loadTableModuleUI("right"),
+                                    joinRenderTableModuleUI("right")
+                                )
+                            ),
                    ),
                    tabPanel("About",
                             fluidRow(
@@ -396,9 +402,13 @@ myApp <- function(...) {
         # 2. CODELIST COMPARISON ##################################################
         #//////////////////////////////////////////////////////////////////////////
         
-        compTableModule("left", reactive(included()))
-        compTableModule("right", reactive(included()))
+        lefttable <- loadTableModule("left", reactive(included()))
+        righttable <- loadTableModule("right", reactive(included()))
         
+        matchcol <- matchcolTableModule("both", reactive(lefttable()), reactive(righttable()))
+        
+        joinRenderTableModule("left", reactive(lefttable()), reactive(righttable()))
+        joinRenderTableModule("right", reactive(righttable()), reactive(lefttable()))
         
         
     }
