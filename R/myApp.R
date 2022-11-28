@@ -117,15 +117,17 @@ myApp <- function(...) {
                    tabPanel("Codelist Comparison", 
                             fluidRow(
                                 column(6,
-                                    loadTableModuleUI("left"),
-                                    htmlOutput("matchcolumn"),
-                                    joinRenderTableModuleUI("left")
+                                       fluidRow(
+                                           column(9, loadTableModuleUI("left")),
+                                           column(3, htmlOutput("matchcolumn"))
+                                       ),
+                                       fluidRow(joinRenderTableModuleUI("left"))
                                 ),
                                 column(6,
-                                    loadTableModuleUI("right"),
-                                    joinRenderTableModuleUI("right")
+                                       fluidRow(loadTableModuleUI("right")),
+                                       fluidRow(joinRenderTableModuleUI("right"))
                                 )
-                            ),
+                            )
                    ),
                    tabPanel("About",
                             fluidRow(
@@ -411,7 +413,6 @@ myApp <- function(...) {
                         NULL)
         })
         matchcolumn <- reactive(input$matchcolumn)
-        
         
         joinRenderTableModule("left", reactive(lefttable()), reactive(righttable()), reactive(matchcolumn()))
         joinRenderTableModule("right", reactive(righttable()), reactive(lefttable()), reactive(matchcolumn()))
