@@ -28,54 +28,48 @@ loadTableModule <- function(id, included) {
         })
 }
 
-matchcolTableModule <- function(id, lefttable, righttable) {
+
+displaycolTableModule <- function(id, thistable) {
     moduleServer(id, function(input, output, session) {
-            #Make dynamically updating UI for picking the column to be matched on
-            output$matchcolumn <- renderUI({
-                selectInput("matchcolumn", label = "Match on", intersect(names(lefttable()), names(righttable())),
-                            NULL)
-            })
-        })}
+        # Pick which columns should be displayed  -------------------
+        
+        #Make dynamically updating UI for picking the columns to be displayed
+        output$selectUI <- renderUI({
+            selectInput("selectUI", label = "Display", names(thistable_joined()), multiple = TRUE)
+        })
+        
+        #Display all columns if nothing is selected
+        displaycolumns <- reactive({
+            if (!is.null(input$selectUI)) {
+                input$selectUI
+            } else { names(thistable_joined())}
+        })
+    }
+    )
+}
 
 
-joinRenderTableModule <- function(id, thistable, othertable) {
+joinRenderTableModule <- function(id, thistable, othertable, matchcolumn) {
     moduleServer(id, function(input, output, session) {
             # Join tables and identify matches ----------------------------------------
             
             thistable_joined <- reactive({
                 validate(need(length(intersect(names(thistable()), names(othertable())))>0 | is.null(thistable()) | is.null(othertable()), "Tables need at least one matching column"))
-                #validate(need(input$matchcolumn %in% names(thistable()) | is.null(thistable()) | is.null(othertable()) , "Loading"))
+                validate(need(matchcolumn() %in% names(thistable()) | is.null(thistable()) | is.null(othertable()) , "Loading"))
                 
                 if (!is.null(thistable()) & !is.null(othertable())) {
-                    thistable() |>
-                        dplyr::mutate(match=ifelse(tolower(!!dplyr::sym(input$matchcolumn)) %in% tolower(othertable()[[input$matchcolumn]]),
-                                                   "yes",
-                                                   "no"))
+                    match = thistable()[[matchcolumn()]] %in% othertable()[[matchcolumn()]]
+                    cbind(thistable(), match)
                 } else {thistable()}
             })
             
-            # Pick which columns should be displayed  -------------------
-            
-            # #Make dynamically updating UI for picking the columns to be displayed
-            # output$selectUI <- renderUI({ 
-            #     selectInput("selectUI", label = "Display", names(thistable_joined()), multiple = TRUE)
-            # })
-            # 
-            # #Display all columns if nothing is selected
-            # displaycolumns <- reactive({
-            #     if (!is.null(input$selectUI)) {
-            #         input$selectUI
-            #     } else { names(thistable_joined())}
-            # })
             # Render the tables -------------------------------------------------------
             
-            dtoptions2 <- list(pageLength = 20, scrollX = TRUE)
-            
             output$compTable <- DT::renderDataTable({ #Need to use DT::renderDataTable, not from shiny::renderDataTable, when rendering DT::datatable()
-                temp <- DT::datatable(thistable_joined(), options = dtoptions2) 
+                temp <- DT::datatable(thistable_joined(), options = list(pageLength = 20, scrollX = TRUE)) 
                 
                 if (!is.null(othertable()) & !is.null(thistable()) & ("match" %in% colnames(thistable_joined()))) {
-                    temp |> DT::formatStyle("match", target = "row", backgroundColor = DT::styleEqual(c("yes", "no"), c("LightGreen","LightCoral")), "white-space"="nowrap")
+                    temp |> DT::formatStyle("match", target = "row", backgroundColor = DT::styleEqual(c(TRUE, FALSE), c("LightGreen","LightCoral")), "white-space"="nowrap")
                 } else { temp}
             })
             
@@ -93,12 +87,6 @@ loadTableModuleUI <- function(id) {
                    actionButton(ns("get_codelist"), "from codelist maker"))
         )
     )}
-
-matchcolModuleUI <- function(id) {
-    ns <- shiny::NS(id)
-    htmlOutput(ns("matchcolumn"))
-    }
-
 
 joinRenderTableModuleUI <- function(id) {
     ns <- shiny::NS(id)

@@ -118,7 +118,7 @@ myApp <- function(...) {
                             fluidRow(
                                 column(6,
                                     loadTableModuleUI("left"),
-                                    matchcolModuleUI("both"),
+                                    htmlOutput("matchcolumn"),
                                     joinRenderTableModuleUI("left")
                                 ),
                                 column(6,
@@ -405,10 +405,16 @@ myApp <- function(...) {
         lefttable <- loadTableModule("left", reactive(included()))
         righttable <- loadTableModule("right", reactive(included()))
         
-        matchcol <- matchcolTableModule("both", reactive(lefttable()), reactive(righttable()))
+        #Make dynamically updating UI for picking the column to be matched on
+        output$matchcolumn <- renderUI({
+            selectInput("matchcolumn", label = "Match on", intersect(names(lefttable()), names(righttable())),
+                        NULL)
+        })
+        matchcolumn <- reactive(input$matchcolumn)
         
-        joinRenderTableModule("left", reactive(lefttable()), reactive(righttable()))
-        joinRenderTableModule("right", reactive(righttable()), reactive(lefttable()))
+        
+        joinRenderTableModule("left", reactive(lefttable()), reactive(righttable()), reactive(matchcolumn()))
+        joinRenderTableModule("right", reactive(righttable()), reactive(lefttable()), reactive(matchcolumn()))
         
         
     }
