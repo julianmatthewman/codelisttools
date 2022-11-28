@@ -46,12 +46,13 @@ joinRenderTableModule <- function(id, thistable, othertable, matchcolumn) {
     # Render
     output$compTable <- DT::renderDataTable({ # Need to use DT::renderDataTable, not from shiny::renderDataTable, when rendering DT::datatable()
       temp <- DT::datatable(thistable_joined(),
+        class = 'nowrap display',
         extensions = "Buttons",
         options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis"))
       )
 
       if (!is.null(othertable()) & !is.null(thistable()) & ("match" %in% colnames(thistable_joined()))) {
-        temp |> DT::formatStyle("match", target = "row", backgroundColor = DT::styleEqual(c(TRUE, FALSE), c("LightGreen", "LightCoral")), "white-space" = "nowrap")
+        temp |> DT::formatStyle("match", target = "row", backgroundColor = DT::styleEqual(c(TRUE, FALSE), c("LightGreen", "LightCoral")))
       } else {
         temp
       }
@@ -68,11 +69,11 @@ loadTableModuleUI <- function(id) {
   tagList(
     fluidRow(
       column(3,
-        style = "margin-top: 25px;",
+        style = "margin-top: 25px; margin-bottom: -25px",
         fileInput(ns("import_codelist"), label = NULL)
       ),
       column(3,
-        style = "margin-top: 25px;",
+        style = "margin-top: 25px; margin-bottom: -25px",
         actionButton(ns("get_codelist"), "from codelist maker")
       )
     )

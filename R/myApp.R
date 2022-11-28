@@ -117,15 +117,15 @@ myApp <- function(...) {
                    tabPanel("Codelist Comparison", 
                             fluidRow(
                                 column(6,
-                                       fluidRow(
+                                       fluidRow(id="withborder", 
                                            column(9, loadTableModuleUI("left")),
-                                           column(3, htmlOutput("matchcolumn"))
+                                           column(3, htmlOutput("matchcolumn"), style = "margin-bottom: -25px;")
                                        ),
-                                       fluidRow(joinRenderTableModuleUI("left"))
+                                       fluidRow(id="withborder", joinRenderTableModuleUI("left"))
                                 ),
                                 column(6,
-                                       fluidRow(loadTableModuleUI("right")),
-                                       fluidRow(joinRenderTableModuleUI("right"))
+                                       fluidRow(id="withborder", loadTableModuleUI("right")),
+                                       fluidRow(id="withborder", joinRenderTableModuleUI("right"))
                                 )
                             )
                    ),
