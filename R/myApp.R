@@ -236,7 +236,7 @@ myApp <- function(...) {
         })
         
         excluded <- reactive({
-            if(termset_search_method()==TRUE)
+            if(termset_search_method()==TRUE & length(exclusionterms())>0)
                 termsearched() |> 
                 dplyr::filter(termsearch(eval(dplyr::sym(cols())), process_terms(exclusionterms())) &
                                   !(tolower(exclusionterms()) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
@@ -403,10 +403,7 @@ myApp <- function(...) {
         #//////////////////////////////////////////////////////////////////////////
         # 2. CODELIST COMPARISON ##################################################
         #//////////////////////////////////////////////////////////////////////////
-        
-        lefttable <- loadTableModule("left", reactive(included()))
-        righttable <- loadTableModule("right", reactive(included()))
-        
+
         #Make dynamically updating UI for picking the column to be matched on
         output$matchcolumn <- renderUI({
             selectInput("matchcolumn", label = "Match on", intersect(names(lefttable()), names(righttable())),
@@ -414,6 +411,9 @@ myApp <- function(...) {
         })
         matchcolumn <- reactive(input$matchcolumn)
         
+        #Loading, joining, and rendering of tables is handled via modules
+        lefttable <- loadTableModule("left", reactive(included()))
+        righttable <- loadTableModule("right", reactive(included()))
         joinRenderTableModule("left", reactive(lefttable()), reactive(righttable()), reactive(matchcolumn()))
         joinRenderTableModule("right", reactive(righttable()), reactive(lefttable()), reactive(matchcolumn()))
         

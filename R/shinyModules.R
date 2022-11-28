@@ -1,6 +1,12 @@
 # Here are modules for the table comparison part of the app
 # Server modules ----------------------------------------------------------
 
+#' Get a table from codelistmaker or upload
+#'
+#' @param id Module namespace
+#' @param included The table of included codes from the codelist maker
+#'
+#' @return The loaded table
 loadTableModule <- function(id, included) {
   moduleServer(id, function(input, output, session) {
     # Set value for table; Make a reactiveValues to store the data; downstream functions will use whatever is stored in here ("duelling values", see https://stackoverflow.com/questions/29716868/r-shiny-how-to-get-an-reactive-data-frame-updated-each-time-pressing-an-actionb)
@@ -24,6 +30,14 @@ loadTableModule <- function(id, included) {
 }
 
 
+#' Join with other table and render as highlighted datatable
+#'
+#' @param id Module namespace
+#' @param thistable This table
+#' @param othertable The other table
+#' @param matchcolumn The column this table will be matches to the other table
+#'
+#' @return This table rendered with matches to the other table, if one exists, highlighted
 joinRenderTableModule <- function(id, thistable, othertable, matchcolumn) {
   moduleServer(id, function(input, output, session) {
     # Join tables and identify matches 
