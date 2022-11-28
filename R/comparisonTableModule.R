@@ -1,11 +1,9 @@
-
+# Here are modules for the table comparison part of the app
 # Server modules ----------------------------------------------------------
 
 loadTableModule <- function(id, included) {
   moduleServer(id, function(input, output, session) {
-    # Set value for table ------------------------------------
-
-    # Make a reactiveValues to store the data; downstream functions will use whatever is stored in here ("duelling values", see https://stackoverflow.com/questions/29716868/r-shiny-how-to-get-an-reactive-data-frame-updated-each-time-pressing-an-actionb)
+    # Set value for table; Make a reactiveValues to store the data; downstream functions will use whatever is stored in here ("duelling values", see https://stackoverflow.com/questions/29716868/r-shiny-how-to-get-an-reactive-data-frame-updated-each-time-pressing-an-actionb)
     v <- reactiveValues(thistable = NULL)
 
     # Either get codelist from codelist maker ...
@@ -26,11 +24,9 @@ loadTableModule <- function(id, included) {
 }
 
 
-
 joinRenderTableModule <- function(id, thistable, othertable, matchcolumn) {
   moduleServer(id, function(input, output, session) {
-    # Join tables and identify matches ----------------------------------------
-
+    # Join tables and identify matches 
     thistable_joined <- reactive({
       validate(need(length(intersect(names(thistable()), names(othertable()))) > 0 | is.null(thistable()) | is.null(othertable()), "Tables need at least one matching column"))
       validate(need(matchcolumn() %in% names(thistable()) | is.null(thistable()) | is.null(othertable()), "Loading"))
@@ -68,11 +64,11 @@ loadTableModuleUI <- function(id) {
   ns <- shiny::NS(id)
   tagList(
     fluidRow(
-      column(3,
+      column(4,
         style = "margin-top: 25px; margin-bottom: -25px",
         fileInput(ns("import_codelist"), label = NULL)
       ),
-      column(3,
+      column(4,
         style = "margin-top: 25px; margin-bottom: -25px",
         actionButton(ns("get_codelist"), "from codelist maker")
       )
