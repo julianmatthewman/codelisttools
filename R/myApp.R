@@ -369,11 +369,15 @@ myApp <- function(...) {
             searchterms <- searchterms()
             exclusionterms <- exclusionterms()
             cols <- cols()
-            n <- max(length(searchterms), length(exclusionterms), length(cols))
+            searchmethod <- ifelse(termset_search_method()==TRUE, 
+                                   "Term sets search method, see 10.1371/journal.pone.0212291",
+                                   "default stringr::str_detect() search method")
+            n <- max(length(searchterms), length(exclusionterms), length(cols), length(searchmethod))
             length(searchterms) <- n                      
             length(exclusionterms) <- n   
             length(cols) <- n  
-            cbind(searchterms,exclusionterms,cols)
+            length(searchmethod) <- n  
+            cbind(searchterms,exclusionterms,cols, searchmethod)
         })
         
         
