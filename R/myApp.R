@@ -167,7 +167,8 @@ myApp <- function(...) {
             inFile <- input$import_codebrowser
             if (is.null(inFile))
                 return(NULL)
-            codebrowser$data <- rio::import(inFile$datapath)
+            codebrowser$data <- rio::import(inFile$datapath) |> 
+                dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
         })
         
         
@@ -266,9 +267,8 @@ myApp <- function(...) {
                 need(descendant_matching() == TRUE, message = FALSE)
             )
             codebrowser$data |> 
-                dplyr::filter(stringr::str_starts(eval(dplyr::sym(codecol())), paste(included()[[codecol()]], collapse = "|"))
-                              & !(eval(dplyr::sym(codecol())) %in% included()[[codecol()]]) 
-                ) 
+                dplyr::filter(stringr::str_starts(eval(dplyr::sym(codecol())), paste(included()[[codecol()]], collapse = "|"))) |> 
+                dplyr::setdiff(included())
         })
         
         
