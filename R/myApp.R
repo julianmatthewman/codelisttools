@@ -7,6 +7,7 @@
 #' @export
 #'
 #' @examples
+library(shiny)
 myApp <- function(...) {
     
     # This shiny app is managed as an R package as described here:
@@ -368,16 +369,16 @@ myApp <- function(...) {
         termtable <- reactive({
             searchterms <- searchterms()
             exclusionterms <- exclusionterms()
-            cols <- cols()
+            searched_in_column <- cols()
             searchmethod <- ifelse(termset_search_method()==TRUE, 
                                    "Term sets search method, see 10.1371/journal.pone.0212291",
                                    "default stringr::str_detect() search method")
-            n <- max(length(searchterms), length(exclusionterms), length(cols), length(searchmethod))
+            n <- max(length(searchterms), length(exclusionterms), length(searched_in_column), length(searchmethod))
             length(searchterms) <- n                      
             length(exclusionterms) <- n   
-            length(cols) <- n  
+            length(searched_in_column) <- n  
             length(searchmethod) <- n  
-            cbind(searchterms,exclusionterms,cols, searchmethod)
+            cbind(searchterms,exclusionterms, searched_in_column, searchmethod)
         })
         
         
