@@ -10,7 +10,7 @@
 # Search function
 
 termsearch <- function(lookup, searchterms, termset_search_method=FALSE) {
-    if(termset_search_method==TRUE) searchterms <- process_terms(searchterms)
+    if(termset_search_method==TRUE & length(searchterms)>0) searchterms <- process_terms(searchterms)
     stringr::str_detect(lookup, stringr::regex(paste(searchterms, collapse = '|'), ignore_case = TRUE))
 }
 

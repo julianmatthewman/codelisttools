@@ -8,6 +8,7 @@
 #'
 #' @examples
 library(shiny)
+
 myApp <- function(...) {
     
     # This shiny app is managed as an R package as described here:
@@ -235,7 +236,7 @@ myApp <- function(...) {
         excluded <- reactive({
                 termsearched() |> 
                 dplyr::filter(termsearch(eval(dplyr::sym(cols())), exclusionterms(), termset_search_method()) &
-                                  !(tolower(exclusionterms()) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
+                                  !(tolower(eval(dplyr::sym(cols()))) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
         })
         
         included <- reactive({
@@ -258,9 +259,9 @@ myApp <- function(...) {
                 need(nrow(included())>0, "Nothing included"),
                 need(descendant_matching() == TRUE, message = FALSE)
             )
-            codebrowser$data |> 
-                dplyr::filter(stringr::str_starts(eval(dplyr::sym(codecol())), paste(included()[[codecol()]], collapse = "|"))) |> 
-                dplyr::setdiff(included())
+            temp <- dplyr::filter(codebrowser$data, stringr::str_starts(eval(dplyr::sym(codecol())), paste(included()[[codecol()]], collapse = "|"))) 
+            if(length(exclusionterms())>0) temp <- dplyr::filter(temp, !termsearch(eval(dplyr::sym(cols())), exclusionterms(), termset_search_method()))
+            dplyr::setdiff(temp, included())
         })
         
         
