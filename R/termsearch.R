@@ -7,10 +7,12 @@
 #' @details Uses the search strategy as described in: Williams, R. et al. (2019) ‘Term sets: A transparent and reproducible representation of clinical code sets’, PLOS ONE. Edited by I. Olier, 14(2), p. e0212291. Available at: https://doi.org/10.1371/journal.pone.0212291.
 
 #' @export
-termsearch <- function(lookup, searchterms) {
+# Search function
+
+termsearch <- function(lookup, searchterms, termset_search_method=FALSE) {
+    if(termset_search_method==TRUE) searchterms <- process_terms(searchterms)
     stringr::str_detect(lookup, stringr::regex(paste(searchterms, collapse = '|'), ignore_case = TRUE))
 }
-
 
 
 #' Process searchterms so termset search rules apply

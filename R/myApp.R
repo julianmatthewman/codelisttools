@@ -224,27 +224,18 @@ myApp <- function(...) {
         })
         
         
-        
         # Make the Tables ---------------------------------------------------------
         
         termsearched <- reactive({
             validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
-            if(termset_search_method()==TRUE)
                 codebrowser$data |> 
-                dplyr::filter(termsearch(eval(dplyr::sym(cols())), process_terms(searchterms())))
-            else
-                codebrowser$data |> 
-                dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms()))
+                dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms(), termset_search_method()))
         })
         
         excluded <- reactive({
-            if(termset_search_method()==TRUE & length(exclusionterms())>0)
                 termsearched() |> 
-                dplyr::filter(termsearch(eval(dplyr::sym(cols())), process_terms(exclusionterms())) &
+                dplyr::filter(termsearch(eval(dplyr::sym(cols())), exclusionterms(), termset_search_method()) &
                                   !(tolower(exclusionterms()) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
-            else
-                termsearched() |> 
-                dplyr::filter(termsearch(eval(dplyr::sym(cols())), exclusionterms())) 
         })
         
         included <- reactive({
