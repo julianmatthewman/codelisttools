@@ -30,13 +30,15 @@ Below, optional checks can be enabled. **Unmatched descendants** will show any n
 
 By default, terms are matched exactly and case-insensitively. The underlying code takes the DATA and keeps only rows where in the specified COLUMN at least one of the SEARCHTERMS is found and none of the EXCLUSIONTERMS are present. This is implemented using R and dplyr, and can be used in a standalone R script if needed:
 
-    termsearch <- function(lookup, terms) {
-        stringr::str_detect(lookup, stringr::regex(paste(terms, collapse = '|'), ignore_case = TRUE))
-    }
+```         
+termsearch <- function(lookup, terms) {
+    stringr::str_detect(lookup, stringr::regex(paste(terms, collapse = '|'), ignore_case = TRUE))
+}
 
-    initial <- dplyr::filter(DATA, termsearch(COLUMN, SEARCHTERMS))
-    excluded <- dplyr::filter(initial, termsearch(COLUMN, EXCLUSIONTERMS))
-    final <- dplyr::setdiff(inital, excluded)
+initial <- dplyr::filter(DATA, termsearch(COLUMN, SEARCHTERMS))
+excluded <- dplyr::filter(initial, termsearch(COLUMN, EXCLUSIONTERMS))
+final <- dplyr::setdiff(inital, excluded)
+```
 
 #### Termset search method
 
