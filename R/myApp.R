@@ -364,7 +364,7 @@ myApp <- function(...) {
             searched_in_column <- cols()
             searchmethod <- ifelse(termset_search_method()==TRUE, 
                                    "Term sets search method, see 10.1371/journal.pone.0212291",
-                                   "default stringr::str_detect() search method")
+                                   "termsearch <- function(lookup, terms) {stringr::str_detect(lookup, stringr::regex(paste(terms, collapse = '|'), ignore_case = TRUE))}; initial <- dplyr::filter(DATA, termsearch(COLUMN, SEARCHTERMS)); excluded <- dplyr::filter(initial, termsearch(COLUMN, EXCLUSIONTERMS); final <- dplyr::setdiff(inital, excluded)")
             n <- max(length(searchterms), length(exclusionterms), length(searched_in_column), length(searchmethod))
             length(searchterms) <- n                      
             length(exclusionterms) <- n   
