@@ -23,7 +23,8 @@ loadTableModule <- function(id, included) {
       if (is.null(inFile)) {
         return(NULL)
       }
-      v$thistable <- rio::import(inFile$datapath)
+      v$thistable <- rio::import(inFile$datapath) |> 
+          dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
     })
     return(reactive(v$thistable))
   })
