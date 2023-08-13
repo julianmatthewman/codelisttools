@@ -387,9 +387,9 @@ myApp <- function(...) {
                 print(tempdir())
                 
                 fs <- c("codelist.csv", "terms.csv", "excluded.csv")
-                utils::write.csv(included(), "codelist.csv", row.names=FALSE, na = "")
-                utils::write.csv(termtable(), "terms.csv", row.names=FALSE, na = "")
-                utils::write.csv(excluded(), "excluded.csv", row.names=FALSE, na = "")
+                utils::write.csv(included(), "codelist.csv", row.names=FALSE, quote = FALSE, na = "")
+                utils::write.csv(termtable(), "terms.csv", row.names=FALSE, quote = FALSE, na = "")
+                utils::write.csv(excluded(), "excluded.csv", row.names=FALSE, quote = FALSE, na = "")
                 
                 utils::zip(zipfile=filename, files=fs)
             },
