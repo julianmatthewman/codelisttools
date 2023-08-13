@@ -19,7 +19,7 @@ myApp <- function(...) {
     
     #Import all browsers in the "in" folder
     paths <- dir("in", full.names = TRUE)
-    browsers <- purrr::map(paths, rio::import) |> 
+    browsers <- purrr::map(paths, \(x) rio::import(x, colClasses=c("character"))) |> 
         purrr::set_names(basename(tools::file_path_sans_ext(paths)))
     
     #product <- rio::import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
@@ -169,8 +169,7 @@ myApp <- function(...) {
             inFile <- input$import_codebrowser
             if (is.null(inFile))
                 return(NULL)
-            codebrowser$data <- rio::import(inFile$datapath) |> 
-                dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
+            codebrowser$data <- rio::import(inFile$datapath, colClasses=c("character"))
         })
         
         

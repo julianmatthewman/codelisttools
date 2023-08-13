@@ -37,7 +37,7 @@ termsearch <- function(lookup, terms) {
 
 initial <- dplyr::filter(DATA, termsearch(COLUMN, SEARCHTERMS))
 excluded <- dplyr::filter(initial, termsearch(COLUMN, EXCLUSIONTERMS))
-final <- dplyr::setdiff(inital, excluded)
+final <- dplyr::setdiff(initial, excluded)
 ```
 
 #### Termset search method
