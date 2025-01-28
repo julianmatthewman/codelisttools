@@ -138,8 +138,18 @@ myApp <- function(...) {
                                 column(6,
                                        htmltools::includeMarkdown("docs/codelist_comparison_README.md"))
                             )
+                   ),
+                   tabPanel("Help",
+                            fluidRow(
+                                column(6,
+                                       htmltools::includeMarkdown("docs/codelist_maker_HELP.md")),
+                                column(6,
+                                       htmltools::includeMarkdown("docs/codelist_comparison_HELP.md"))
+                            )
                    )
+                   
         )
+
     )
     
     
