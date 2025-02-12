@@ -7,6 +7,8 @@
 #' @export
 #'
 #' @examples
+
+#HI
 library(shiny)
 
 myApp <- function(...) {
