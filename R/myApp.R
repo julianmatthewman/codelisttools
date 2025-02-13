@@ -1,13 +1,7 @@
 #' The Codelist Tools Shiny App
 #'
-#' @import shiny
-#' @param ...
-#'
-#' @return
-#' @export
-#'
-#' @examples
 library(shiny)
+library(ellmer)
 
 myApp <- function(...) {
   # This shiny app is managed as an R package as described here:
@@ -160,7 +154,13 @@ myApp <- function(...) {
         sidebarLayout(
           sidebarPanel(
             fluidRow(
-              loadTableModuleUI("categorisation")
+              loadTableModuleUI("categorisation"),
+              htmlOutput("select_search_cols_categorisationTable"),
+              uiOutput("category_checkboxes"),
+              textInput("new_category", "Add New Category"),
+              actionButton("add_category", "Add Category"),
+              
+              actionButton("classify", "Classify Codes")
             )
           ),
         mainPanel(
@@ -580,7 +580,36 @@ myApp <- function(...) {
     # //////////////////////////////////////////////////////////////////////////
     # 4. CATEGORISATION -------------------------------------------------------
     # //////////////////////////////////////////////////////////////////////////
-
+    # Initialize reactive values for categories
+    categories <- reactiveVal(c("Diagnosis", "Administration", "Personal history", 
+                                "Family history", "Symptom", "Negation"))
+    
+    # Render the checkbox group UI
+    output$category_checkboxes <- renderUI({
+        checkboxGroupInput("selected_categories", 
+                           "Select categories for classification:",
+                           choices = categories(),
+                           selected = categories())
+    })
+    
+    # Add new category handler
+    observeEvent(input$add_category, {
+        if (input$new_category != "" && !(input$new_category %in% categories())) {
+            # Update the reactive categories list
+            new_cats <- c(categories(), input$new_category)
+            categories(new_cats)
+            
+            # Clear the input field
+            updateTextInput(session, "new_category", value = "")
+        }
+    })
+    # Initialize chat model
+    chat <- chat_ollama(model = "llama3.2",
+                        system_prompt = "Classify clinical codes into clinically meaningful categories.")
+    
+    # Default category options
+    #all_categories <- c("Diagnosis", "Administration", "Personal history", "Family history", "Symptom", "Negation")
+    
    # Loading of tables is handled via modules
    categorisationTable <- loadTableModule("categorisation", reactive(included()))
 
@@ -590,8 +619,39 @@ myApp <- function(...) {
       extensions = "Buttons",
       options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
    })
-  
+   
+   # Update the column selection
+   output$select_search_cols_categorisationTable <- renderUI({
+       selectInput("search_col_categorisationTable", "Select column to search in", names(categorisationTable()),
+                   names(categorisationTable())[[1]],
+                   multiple = FALSE
+       )
+   })
+   search_cols_categorisationTable <- reactive(input$search_col_categorisationTable)
 
+   # Add new category
+   observeEvent(input$add_category, {
+       if (input$new_category != "") {
+           updateCheckboxGroupInput(session, "selected_categories",
+                                    choices = c(input$selected_categories, input$new_category),
+                                    selected = c(input$selected_categories, input$new_category))
+       }
+   })
+
+   # Function to classify terms
+   classify_term <- function(term, selected_categories) {
+       if (length(selected_categories) == 0) return(NA)
+       type_classification <- type_enum("Category", values = selected_categories)
+       response <- chat$extract_data(term, type = type_classification)
+       return(response)
+   }
+
+   # Perform classification
+   observeEvent(input$classify, {
+       req(input$selected_categories, categorisationTable(), input$search_col)
+       categorisationTable()$Category <- sapply(categorisationTable()[[input$search_col]], classify_term,
+                                      selected_categories = input$selected_categories)
+   })
 }
 
   # Run the application
