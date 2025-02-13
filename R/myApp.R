@@ -165,7 +165,8 @@ myApp <- function(...) {
           ),
         mainPanel(
           id = "withborder",
-          DT::dataTableOutput("categorisationTable")
+          DT::dataTableOutput("categorisationTable"),
+          DT::dataTableOutput("categorisationTableClassified")
           )        
       )),
       tabPanel(
@@ -609,7 +610,7 @@ myApp <- function(...) {
     
    
    # Loading of tables is handled via modules
-   categorisationTable <- reactiveValues(data = NULL)
+   categorisationTable <- reactiveValues(data = NULL, classified = NULL)
    categorisationTable$data <- loadTableModule("categorisation", reactive(included()))
 
    output$categorisationTable <- DT::renderDataTable({
@@ -618,6 +619,13 @@ myApp <- function(...) {
       extensions = "Buttons",
       options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
    })
+    
+   output$categorisationTableClassified <- DT::renderDataTable({
+    DT::datatable(categorisationTable$classified(),
+     class = 'nowrap display',
+     extensions = "Buttons",
+     options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
+  })
    
    # Update the column selection
    output$select_search_cols_categorisationTable <- renderUI({
@@ -649,13 +657,13 @@ myApp <- function(...) {
    observeEvent(input$classify, {
       #  req(input$selected_categories, categorisationTable(), input$search_col_categorisationTable)
        temp <- categorisationTable$data()
-        temp |> dplyr::mutate(Category = "hi"
-          # sapply(categorisationTable()[[input$search_col_categorisationTable]], classify_term,
-          #                             selected_categories = input$selected_categories)
+        temp <- temp |> dplyr::mutate(Category = 
+          sapply(categorisationTable$data()[[input$search_col_categorisationTable]], classify_term,
+                                      selected_categories = input$selected_categories)
                                     )
      
 
-     categorisationTable$data <- reactive(temp)
+     categorisationTable$classified <- reactive(temp)
    })
   }
 
