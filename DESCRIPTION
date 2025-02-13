@@ -24,4 +24,5 @@ Imports:
     rio,
     shiny,
     stringi,
-    stringr
+    stringr,
+    jsonlite

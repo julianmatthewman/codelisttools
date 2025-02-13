@@ -55,6 +55,7 @@ myApp <- function(...) {
               "insipidus",
               resize = "vertical"
             ),
+            fileInput("import_search_terms", "Import Search Terms", accept = ".json"),
             htmlOutput("select_search_cols"),
             checkboxInput("termset_search_method",
               label = tags$span(
@@ -192,7 +193,7 @@ myApp <- function(...) {
 
   # SERVER ------------------------------------------------------------------
 
-  server <- function(input, output) {
+  server <- function(input, output, session) {
     options(shiny.maxRequestSize = 100 * 1024^2)
 
     # //////////////////////////////////////////////////////////////////////////
@@ -219,7 +220,35 @@ myApp <- function(...) {
       codebrowser$data <- rio::import(inFile$datapath, colClasses = c("character"))
     })
 
-
+    # Select search terms ----------------------------------------------------------
+    
+    search_browser <- reactiveValues(
+        includeTerms = NULL,
+        excludeTerms = NULL
+    )
+    
+    observeEvent(input$import_search_terms, {
+        req(input$import_search_terms)
+        
+        # Read and parse JSON file
+        json_data <- jsonlite::fromJSON(input$import_search_terms$datapath)
+        
+        # Store in reactive values
+        search_browser$includeTerms <- json_data$includeTerms
+        search_browser$excludeTerms <- json_data$excludeTerms
+        
+        
+        # Convert terms to a single string, separated by new lines
+        include_terms_text <- paste(json_data$includeTerms, collapse = "\n")
+        exclude_terms_text <- paste(json_data$excludeTerms, collapse = "\n")
+        
+        # Update the textAreaInput fields dynamically
+        updateTextAreaInput(session, "searchterms", value = include_terms_text)
+        updateTextAreaInput(session, "exclusionterms", value = exclude_terms_text)  
+        
+    })
+    
+    
     # Make dynamic UIs to pick columns ----------------------------------------
 
 
