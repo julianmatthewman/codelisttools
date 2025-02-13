@@ -55,7 +55,7 @@ myApp <- function(...) {
               "insipidus",
               resize = "vertical"
             ),
-            fileInput("import_search_terms", "Import Search Terms", accept = ".json"),
+            fileInput("import_search_terms", "Import Search Terms", accept = c(".json",".csv")),
             htmlOutput("select_search_cols"),
             checkboxInput("termset_search_method",
               label = tags$span(
@@ -225,6 +225,10 @@ myApp <- function(...) {
     observeEvent(input$import_search_terms, {
         req(input$import_search_terms)
         
+        file_path <- input$import_search_terms$datapath
+        file_ext <- tools::file_ext(input$import_search_terms$name)
+        
+        if (file_ext == "json") {
         # Read and parse JSON file
         json_data <- jsonlite::fromJSON(input$import_search_terms$datapath)
         
@@ -232,10 +236,30 @@ myApp <- function(...) {
         search_browser$includeTerms <- json_data$includeTerms
         search_browser$excludeTerms <- json_data$excludeTerms
         
-        
         # Convert terms to a single string, separated by new lines
         include_terms_text <- paste(json_data$includeTerms, collapse = "\n")
         exclude_terms_text <- paste(json_data$excludeTerms, collapse = "\n")
+        
+        } else if (file_ext == "csv") {
+            
+        suppressWarnings({
+             csv_data <- readr::read_csv(file_path, col_select = c(searchterms, exclusionterms), show_col_types = FALSE)
+        })
+        
+        csvsearchterms <- csv_data$searchterms[!is.na(csv_data$searchterms) & csv_data$searchterms != ""]
+        csvexcludeterms <- csv_data$exclusionterms[!is.na(csv_data$exclusionterms) & csv_data$exclusionterms != ""]
+        
+        search_browser$includeTerms <- csvsearchterms 
+        search_browser$excludeTerms <- csvexcludeterms
+        
+        # Convert terms to a single string, separated by new lines
+        include_terms_text <- paste(csvsearchterms, collapse = "\n")
+        exclude_terms_text <- paste(csvexcludeterms, collapse = "\n")        
+        
+        } else {
+            showNotification("Unsupported file format. Please upload JSON or CSV.", type = "error")
+            return()
+        }
         
         # Update the textAreaInput fields dynamically
         updateTextAreaInput(session, "searchterms", value = include_terms_text)
