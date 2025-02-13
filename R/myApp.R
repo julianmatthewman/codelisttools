@@ -138,7 +138,7 @@ myApp <- function(...) {
             12,
             fluidRow(
               id = "withborder",
-              column(6, fileInput("import_external_codelist", label = NULL)),
+              column(6, fileInput("import_external_codelist", label = "Import external codelist")),
               column(6, htmlOutput("select_search_cols_external_codelist"))
             )
           )
@@ -159,7 +159,6 @@ myApp <- function(...) {
               uiOutput("category_checkboxes"),
               textInput("new_category", "Add New Category"),
               actionButton("add_category", "Add Category"),
-              
               actionButton("classify", "Classify Codes")
             )
           ),
