@@ -157,21 +157,17 @@ myApp <- function(...) {
       ),
       tabPanel(
         "Categorisation",
-        fluidRow(
-          column(
-            12,
+        sidebarLayout(
+          sidebarPanel(
             fluidRow(
-              id = "withborder",
-              column(9, loadTableModuleUI("categorisation"))
+              loadTableModuleUI("categorisation")
             )
-          )
-        ),
-        fluidRow(
+          ),
+        mainPanel(
           id = "withborder",
-          h4("External codelist"),
           DT::dataTableOutput("categorisationTable")
           )        
-      ),
+      )),
       tabPanel(
         "About",
         fluidRow(
