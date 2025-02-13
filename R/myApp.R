@@ -155,6 +155,24 @@ myApp <- function(...) {
         )
       ),
       tabPanel(
+        "Categorisation",
+        fluidRow(
+          column(
+            12,
+            fluidRow(
+              id = "withborder",
+              column(9, loadTableModuleUI("categorisation")),
+              column(6, htmlOutput("categorisation"))
+            )
+          )
+        ),
+        fluidRow(
+          id = "withborder",
+          h4("External codelist"),
+          "table will go here"
+        )
+      ),
+      tabPanel(
         "About",
         fluidRow(
           column(
@@ -510,6 +528,13 @@ myApp <- function(...) {
   })
     
   }
+
+    # //////////////////////////////////////////////////////////////////////////
+    # 4. CATEGORISATION -------------------------------------------------------
+    # //////////////////////////////////////////////////////////////////////////
+
+   # Loading, joining, and rendering of tables is handled via modules
+  #  categorisation <- loadTableModule("categorisation", reactive(included()))
 
 
 
