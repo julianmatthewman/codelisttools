@@ -25,4 +25,6 @@ Imports:
     shiny,
     stringi,
     stringr,
-    jsonlite
+    jsonlite,
+    ellmer,
+    readr
