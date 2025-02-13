@@ -162,16 +162,15 @@ myApp <- function(...) {
             12,
             fluidRow(
               id = "withborder",
-              column(9, loadTableModuleUI("categorisation")),
-              column(6, htmlOutput("categorisation"))
+              column(9, loadTableModuleUI("categorisation"))
             )
           )
         ),
         fluidRow(
           id = "withborder",
           h4("External codelist"),
-          "table will go here"
-        )
+          DT::dataTableOutput("categorisationTable")
+          )        
       ),
       tabPanel(
         "About",
@@ -556,18 +555,25 @@ myApp <- function(...) {
       print(externalterms())
   })
     
-  }
+
 
     # //////////////////////////////////////////////////////////////////////////
     # 4. CATEGORISATION -------------------------------------------------------
     # //////////////////////////////////////////////////////////////////////////
 
-   # Loading, joining, and rendering of tables is handled via modules
-  #  categorisation <- loadTableModule("categorisation", reactive(included()))
+   # Loading of tables is handled via modules
+   categorisationTable <- loadTableModule("categorisation", reactive(included()))
 
+   output$categorisationTable <- DT::renderDataTable({
+     DT::datatable(categorisationTable(),
+      class = 'nowrap display',
+      extensions = "Buttons",
+      options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
+   })
+  
 
-
+}
 
   # Run the application
   shinyApp(ui = ui, server = server)
-}
+   }
