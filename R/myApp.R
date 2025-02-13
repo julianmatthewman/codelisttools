@@ -610,8 +610,9 @@ myApp <- function(...) {
     
    
    # Loading of tables is handled via modules
-   categorisationTable <- reactiveValues(data = NULL, classified = NULL)
+   categorisationTable <- reactiveValues(data = NULL)
    categorisationTable$data <- loadTableModule("categorisation", reactive(included()))
+    
 
    output$categorisationTable <- DT::renderDataTable({
      DT::datatable(categorisationTable$data(),
@@ -619,13 +620,6 @@ myApp <- function(...) {
       extensions = "Buttons",
       options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
    })
-    
-   output$categorisationTableClassified <- DT::renderDataTable({
-    DT::datatable(categorisationTable$classified(),
-     class = 'nowrap display',
-     extensions = "Buttons",
-     options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
-  })
    
    # Update the column selection
    output$select_search_cols_categorisationTable <- renderUI({
@@ -663,7 +657,7 @@ myApp <- function(...) {
                                     )
      
 
-     categorisationTable$classified <- reactive(temp)
+     categorisationTable$data <- reactive(temp)
    })
   }
 
