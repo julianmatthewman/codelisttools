@@ -604,17 +604,16 @@ myApp <- function(...) {
         }
     })
     # Initialize chat model
-    chat <- chat_ollama(model = "llama3.2",
+    chat <- ellmer::chat_ollama(model = "phi4",
                         system_prompt = "Classify clinical codes into clinically meaningful categories.")
     
-    # Default category options
-    #all_categories <- c("Diagnosis", "Administration", "Personal history", "Family history", "Symptom", "Negation")
-    
+   
    # Loading of tables is handled via modules
-   categorisationTable <- loadTableModule("categorisation", reactive(included()))
+   categorisationTable <- reactiveValues(data = NULL)
+   categorisationTable$data <- loadTableModule("categorisation", reactive(included()))
 
    output$categorisationTable <- DT::renderDataTable({
-     DT::datatable(categorisationTable(),
+     DT::datatable(categorisationTable$data(),
       class = 'nowrap display',
       extensions = "Buttons",
       options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
@@ -622,8 +621,8 @@ myApp <- function(...) {
    
    # Update the column selection
    output$select_search_cols_categorisationTable <- renderUI({
-       selectInput("search_col_categorisationTable", "Select column to search in", names(categorisationTable()),
-                   names(categorisationTable())[[1]],
+       selectInput("search_col_categorisationTable", "Select column to search in", names(categorisationTable$data()),
+                   names(categorisationTable$data())[[1]],
                    multiple = FALSE
        )
    })
@@ -641,18 +640,24 @@ myApp <- function(...) {
    # Function to classify terms
    classify_term <- function(term, selected_categories) {
        if (length(selected_categories) == 0) return(NA)
-       type_classification <- type_enum("Category", values = selected_categories)
+       type_classification <- ellmer::type_enum("Category", values = selected_categories)
        response <- chat$extract_data(term, type = type_classification)
        return(response)
    }
 
    # Perform classification
    observeEvent(input$classify, {
-       req(input$selected_categories, categorisationTable(), input$search_col)
-       categorisationTable()$Category <- sapply(categorisationTable()[[input$search_col]], classify_term,
-                                      selected_categories = input$selected_categories)
+      #  req(input$selected_categories, categorisationTable(), input$search_col_categorisationTable)
+       temp <- categorisationTable$data()
+        temp |> dplyr::mutate(Category = "hi"
+          # sapply(categorisationTable()[[input$search_col_categorisationTable]], classify_term,
+          #                             selected_categories = input$selected_categories)
+                                    )
+     
+
+     categorisationTable$data <- reactive(temp)
    })
-}
+  }
 
   # Run the application
   shinyApp(ui = ui, server = server)
