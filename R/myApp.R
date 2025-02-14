@@ -152,7 +152,7 @@ myApp <- function(...) {
           column(6,
               id = "withborder",
               h4("Monograms"),
-              tableOutput("monograms")
+              DT::dataTableOutput("monograms")
           ),
         )
       ),
@@ -592,7 +592,7 @@ myApp <- function(...) {
         monogram <- df %>%
             tidytext::unnest_tokens(monogram, text, token = "ngrams", n = 1) %>%
             dplyr::count(monogram, sort = TRUE)
-        return(monogram[1:3,])
+        return(monogram)
         
     }
 
@@ -605,9 +605,12 @@ myApp <- function(...) {
     
     monograms <- reactive({ monogramer(externalterms()) })
         
-    output$monograms <- renderTable({ monograms() })
-
-
+    output$monograms <-  DT::renderDataTable(
+      {
+        monograms()[drop = FALSE]
+      },
+      options = dtoptions
+    )
     # //////////////////////////////////////////////////////////////////////////
     # 4. CATEGORISATION -------------------------------------------------------
     # //////////////////////////////////////////////////////////////////////////
