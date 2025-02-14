@@ -27,4 +27,6 @@ Imports:
     stringr,
     jsonlite,
     ellmer,
-    readr
+    readr,
+    tm,
+    tidytext

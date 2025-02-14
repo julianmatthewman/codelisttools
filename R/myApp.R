@@ -2,8 +2,6 @@
 #'
 library(shiny)
 library(ellmer)
-library(tm)
-library(tidytext)
 
 myApp <- function(...) {
   # This shiny app is managed as an R package as described here:
