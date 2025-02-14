@@ -144,9 +144,16 @@ myApp <- function(...) {
           )
         ),
         fluidRow(
+            column(6,
           id = "withborder",
           h4("External codelist"),
           verbatimTextOutput("externalterms")
+            ),
+          column(6,
+              id = "withborder",
+              h4("Monograms"),
+              tableOutput("monograms")
+          ),
         )
       ),
       tabPanel(
@@ -575,6 +582,30 @@ myApp <- function(...) {
       print(externalterms())
   })
     
+    ####
+    monogramer <- function(x){
+        codelist_clean <- tolower(x)
+        codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
+        stop_words <- tm::stopwords("en")
+        codelist_clean <- tm::removeWords(codelist_clean, stop_words)
+        df <- data.frame(text =codelist_clean, stringsAsFactors = FALSE )
+        monogram <- df %>%
+            tidytext::unnest_tokens(monogram, text, token = "ngrams", n = 1) %>%
+            dplyr::count(monogram, sort = TRUE)
+        return(monogram[1:3,])
+        
+    }
+
+    #bigram <- df %>%
+     #   tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
+      #  count(bigram, sort = TRUE)
+    #tigram <- df %>%
+       # tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 3) %>%
+        #count(trigram, sort = TRUE)
+    
+    monograms <- reactive({ monogramer(externalterms()) })
+        
+    output$monograms <- renderTable({ monograms() })
 
 
     # //////////////////////////////////////////////////////////////////////////
@@ -603,11 +634,11 @@ myApp <- function(...) {
             updateTextInput(session, "new_category", value = "")
         }
     })
-    # Initialize chat model
-    chat <- ellmer::chat_ollama(model = "phi4",
-                        system_prompt = "Classify clinical codes into clinically meaningful categories.")
-    
-   
+    # # Initialize chat model
+    # chat <- ellmer::chat_ollama(model = "phi4",
+    #                     system_prompt = "Classify clinical codes into clinically meaningful categories.")
+    # 
+    # 
    # Loading of tables is handled via modules
    categorisationTable <- reactiveValues(data = NULL)
    categorisationTable$data <- loadTableModule("categorisation", reactive(included()))
