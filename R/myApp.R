@@ -144,16 +144,26 @@ myApp <- function(...) {
           )
         ),
         fluidRow(
-            column(6,
+            column(3,
           id = "withborder",
           h4("External codelist"),
           verbatimTextOutput("externalterms")
             ),
-          column(6,
+          column(3,
               id = "withborder",
               h4("Monograms"),
               DT::dataTableOutput("monograms")
           ),
+          column(3,
+                 id = "withborder",
+                 h4("Bigrams"),
+                 DT::dataTableOutput("bigrams")
+          ),
+          column(3,
+                 id = "withborder",
+                 h4("Trigrams"),
+                 DT::dataTableOutput("trigrams")
+          )
         )
       ),
       tabPanel(
@@ -595,21 +605,53 @@ myApp <- function(...) {
         return(monogram)
         
     }
+    bigramer <- function(x){
+        codelist_clean <- tolower(x)
+        codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
+        stop_words <- tm::stopwords("en")
+        codelist_clean <- tm::removeWords(codelist_clean, stop_words)
+        df <- data.frame(text =codelist_clean, stringsAsFactors = FALSE )
+        monogram <- df %>%
+            tidytext::unnest_tokens(monogram, text, token = "ngrams", n = 2) %>%
+            dplyr::count(monogram, sort = TRUE)
+        return(monogram)
+        
+    }
+    trigramer <- function(x){
+        codelist_clean <- tolower(x)
+        codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
+        stop_words <- tm::stopwords("en")
+        codelist_clean <- tm::removeWords(codelist_clean, stop_words)
+        df <- data.frame(text =codelist_clean, stringsAsFactors = FALSE )
+        monogram <- df %>%
+            tidytext::unnest_tokens(monogram, text, token = "ngrams", n = 3) %>%
+            dplyr::count(monogram, sort = TRUE)
+        return(monogram)
+        
+    }
 
-    #bigram <- df %>%
-     #   tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
-      #  count(bigram, sort = TRUE)
-    #tigram <- df %>%
-       # tidytext::unnest_tokens(bigram, text, token = "ngrams", n = 3) %>%
-        #count(trigram, sort = TRUE)
     
     monograms <- reactive({ monogramer(externalterms()) })
+    bigrams <- reactive({ bigramer(externalterms()) })
+    trigrams <- reactive({ trigramer(externalterms()) })
         
     output$monograms <-  DT::renderDataTable(
       {
         monograms()[drop = FALSE]
       },
       options = dtoptions
+    )
+    output$bigrams <-  DT::renderDataTable(
+        {
+            bigrams()[drop = FALSE]
+        },
+        options = dtoptions
+    )
+    output$trigrams <-  DT::renderDataTable(
+        {
+            trigrams()[drop = FALSE]
+        },
+        options = dtoptions
     )
     # //////////////////////////////////////////////////////////////////////////
     # 4. CATEGORISATION -------------------------------------------------------
