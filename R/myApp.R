@@ -592,67 +592,33 @@ myApp <- function(...) {
       print(externalterms())
   })
     
-    ####
-    monogramer <- function(x){
+    # Function to make n-grams
+    ngramer <- function(x, n){
         codelist_clean <- tolower(x)
         codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
         stop_words <- tm::stopwords("en")
         codelist_clean <- tm::removeWords(codelist_clean, stop_words)
         df <- data.frame(text =codelist_clean, stringsAsFactors = FALSE )
-        monogram <- df %>%
-            tidytext::unnest_tokens(monogram, text, token = "ngrams", n = 1) %>%
-            dplyr::count(monogram, sort = TRUE)
-        return(monogram)
-        
+        ngram <- df %>%
+            tidytext::unnest_tokens(term, text, token = "ngrams", n = n) %>%
+            dplyr::count(term, sort = TRUE)
+        return(ngram)
     }
-    bigramer <- function(x){
-        codelist_clean <- tolower(x)
-        codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
-        stop_words <- tm::stopwords("en")
-        codelist_clean <- tm::removeWords(codelist_clean, stop_words)
-        df <- data.frame(text =codelist_clean, stringsAsFactors = FALSE )
-        monogram <- df %>%
-            tidytext::unnest_tokens(monogram, text, token = "ngrams", n = 2) %>%
-            dplyr::count(monogram, sort = TRUE)
-        return(monogram)
-        
-    }
-    trigramer <- function(x){
-        codelist_clean <- tolower(x)
-        codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
-        stop_words <- tm::stopwords("en")
-        codelist_clean <- tm::removeWords(codelist_clean, stop_words)
-        df <- data.frame(text =codelist_clean, stringsAsFactors = FALSE )
-        monogram <- df %>%
-            tidytext::unnest_tokens(monogram, text, token = "ngrams", n = 3) %>%
-            dplyr::count(monogram, sort = TRUE)
-        return(monogram)
-        
-    }
-
     
-    monograms <- reactive({ monogramer(externalterms()) })
-    bigrams <- reactive({ bigramer(externalterms()) })
-    trigrams <- reactive({ trigramer(externalterms()) })
+    monograms <- reactive({ ngramer(externalterms(), 1) })
+    bigrams <- reactive({ ngramer(externalterms(), 2) })
+    trigrams <- reactive({ ngramer(externalterms(), 3) })
         
     output$monograms <-  DT::renderDataTable(
-      {
-        monograms()[drop = FALSE]
-      },
-      options = dtoptions
+      {monograms()[drop = FALSE]},options = dtoptions
     )
     output$bigrams <-  DT::renderDataTable(
-        {
-            bigrams()[drop = FALSE]
-        },
-        options = dtoptions
+        {bigrams()[drop = FALSE]},options = dtoptions
     )
     output$trigrams <-  DT::renderDataTable(
-        {
-            trigrams()[drop = FALSE]
-        },
-        options = dtoptions
+        {trigrams()[drop = FALSE]},options = dtoptions
     )
+    
     # //////////////////////////////////////////////////////////////////////////
     # 4. CATEGORISATION -------------------------------------------------------
     # //////////////////////////////////////////////////////////////////////////
@@ -679,11 +645,11 @@ myApp <- function(...) {
             updateTextInput(session, "new_category", value = "")
         }
     })
-    # # Initialize chat model
-    # chat <- ellmer::chat_ollama(model = "phi4",
-    #                     system_prompt = "Classify clinical codes into clinically meaningful categories.")
-    # 
-    # 
+    # Initialize chat model
+    chat <- ellmer::chat_gemini(model = "gemini-2.0-flash",
+                        system_prompt = "Classify clinical codes into clinically meaningful categories.")
+    
+    
    # Loading of tables is handled via modules
    categorisationTable <- reactiveValues(data = NULL)
    categorisationTable$data <- loadTableModule("categorisation", reactive(included()))
