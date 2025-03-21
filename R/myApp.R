@@ -1,7 +1,7 @@
 #' The Codelist Tools Shiny App
 #'
 library(shiny)
-library(ellmer)
+# library(ellmer)
 
 myApp <- function(...) {
   # This shiny app is managed as an R package as described here:
@@ -166,25 +166,25 @@ myApp <- function(...) {
           )
         )
       ),
-      tabPanel(
-        "Categorisation",
-        sidebarLayout(
-          sidebarPanel(
-            fluidRow(
-              loadTableModuleUI("categorisation"),
-              htmlOutput("select_search_cols_categorisationTable"),
-              uiOutput("category_checkboxes"),
-              textInput("new_category", "Add New Category"),
-              actionButton("add_category", "Add Category"),
-              actionButton("classify", "Classify Codes")
-            )
-          ),
-        mainPanel(
-          id = "withborder",
-          DT::dataTableOutput("categorisationTable"),
-          DT::dataTableOutput("categorisationTableClassified")
-          )        
-      )),
+      # tabPanel(
+      #   "Categorisation",
+      #   sidebarLayout(
+      #     sidebarPanel(
+      #       fluidRow(
+      #         loadTableModuleUI("categorisation"),
+      #         htmlOutput("select_search_cols_categorisationTable"),
+      #         uiOutput("category_checkboxes"),
+      #         textInput("new_category", "Add New Category"),
+      #         actionButton("add_category", "Add Category"),
+      #         actionButton("classify", "Classify Codes")
+      #       )
+      #     ),
+      #   mainPanel(
+      #     id = "withborder",
+      #     DT::dataTableOutput("categorisationTable"),
+      #     DT::dataTableOutput("categorisationTableClassified")
+      #     )        
+      # )),
       tabPanel(
         "About",
         fluidRow(
@@ -614,88 +614,88 @@ myApp <- function(...) {
     output$trigrams <-  DT::renderDataTable({trigrams()[drop = FALSE]},options = dtoptions)
     
 
-    # //////////////////////////////////////////////////////////////////////////
-    # 4. CATEGORISATION -------------------------------------------------------
-    # //////////////////////////////////////////////////////////////////////////
+  #   # //////////////////////////////////////////////////////////////////////////
+  #   # 4. CATEGORISATION -------------------------------------------------------
+  #   # //////////////////////////////////////////////////////////////////////////
 
-    # Initialize reactive values for categories
-    categories <- reactiveVal(c("Diagnosis", "Administration", "Personal history", 
-                                "Family history", "Symptom", "Negation"))
+  #   # Initialize reactive values for categories
+  #   categories <- reactiveVal(c("Diagnosis", "Administration", "Personal history", 
+  #                               "Family history", "Symptom", "Negation"))
     
-    # Render the checkbox group UI
-    output$category_checkboxes <- renderUI({
-        checkboxGroupInput("selected_categories", 
-                           "Select categories for classification:",
-                           choices = categories(),
-                           selected = categories())
-    })
+  #   # Render the checkbox group UI
+  #   output$category_checkboxes <- renderUI({
+  #       checkboxGroupInput("selected_categories", 
+  #                          "Select categories for classification:",
+  #                          choices = categories(),
+  #                          selected = categories())
+  #   })
     
-    # Add new category handler
-    observeEvent(input$add_category, {
-        if (input$new_category != "" && !(input$new_category %in% categories())) {
-            # Update the reactive categories list
-            new_cats <- c(categories(), input$new_category)
-            categories(new_cats)
+  #   # Add new category handler
+  #   observeEvent(input$add_category, {
+  #       if (input$new_category != "" && !(input$new_category %in% categories())) {
+  #           # Update the reactive categories list
+  #           new_cats <- c(categories(), input$new_category)
+  #           categories(new_cats)
             
-            # Clear the input field
-            updateTextInput(session, "new_category", value = "")
-        }
-    })
-    # Initialize chat model
-    chat <- ellmer::chat_gemini(model = "gemini-2.0-flash",
-                        system_prompt = "Classify clinical codes into clinically meaningful categories.")
+  #           # Clear the input field
+  #           updateTextInput(session, "new_category", value = "")
+  #       }
+  #   })
+  #   # Initialize chat model
+  #   chat <- ellmer::chat_gemini(model = "gemini-2.0-flash",
+  #                       system_prompt = "Classify clinical codes into clinically meaningful categories.")
     
     
-   # Loading of tables is handled via modules
-   categorisationTable <- reactiveValues(data = NULL)
-   categorisationTable$data <- loadTableModule("categorisation", reactive(included() |> dplyr::mutate(Category = NA)))
+  #  # Loading of tables is handled via modules
+  #  categorisationTable <- reactiveValues(data = NULL)
+  #  categorisationTable$data <- loadTableModule("categorisation", reactive(included() |> dplyr::mutate(Category = NA)))
     
 
-   output$categorisationTable <- DT::renderDataTable({
-     DT::datatable(categorisationTable$data(),
-      class = 'nowrap display',
-      extensions = "Buttons",
-      options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
-   })
+  #  output$categorisationTable <- DT::renderDataTable({
+  #    DT::datatable(categorisationTable$data(),
+  #     class = 'nowrap display',
+  #     extensions = "Buttons",
+  #     options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
+  #  })
    
-   # Update the column selection
-   output$select_search_cols_categorisationTable <- renderUI({
-       selectInput("search_col_categorisationTable", "Select column to search in", names(categorisationTable$data()),
-                   names(categorisationTable$data())[[1]],
-                   multiple = FALSE
-       )
-   })
-   search_cols_categorisationTable <- reactive(input$search_col_categorisationTable)
+  #  # Update the column selection
+  #  output$select_search_cols_categorisationTable <- renderUI({
+  #      selectInput("search_col_categorisationTable", "Select column to search in", names(categorisationTable$data()),
+  #                  names(categorisationTable$data())[[1]],
+  #                  multiple = FALSE
+  #      )
+  #  })
+  #  search_cols_categorisationTable <- reactive(input$search_col_categorisationTable)
 
-   # Add new category
-   observeEvent(input$add_category, {
-       if (input$new_category != "") {
-           updateCheckboxGroupInput(session, "selected_categories",
-                                    choices = c(input$selected_categories, input$new_category),
-                                    selected = c(input$selected_categories, input$new_category))
-       }
-   })
+  #  # Add new category
+  #  observeEvent(input$add_category, {
+  #      if (input$new_category != "") {
+  #          updateCheckboxGroupInput(session, "selected_categories",
+  #                                   choices = c(input$selected_categories, input$new_category),
+  #                                   selected = c(input$selected_categories, input$new_category))
+  #      }
+  #  })
 
-   # Function to classify terms
-   classify_term <- function(term, selected_categories) {
-       if (length(selected_categories) == 0) return(NA)
-       type_classification <- ellmer::type_enum("Category", values = selected_categories)
-       response <- chat$extract_data(term, type = type_classification)
-       return(response)
-   }
+  #  # Function to classify terms
+  #  classify_term <- function(term, selected_categories) {
+  #      if (length(selected_categories) == 0) return(NA)
+  #      type_classification <- ellmer::type_enum("Category", values = selected_categories)
+  #      response <- chat$extract_data(term, type = type_classification)
+  #      return(response)
+  #  }
 
-   # Perform classification
-   observeEvent(input$classify, {
-      #  req(input$selected_categories, categorisationTable(), input$search_col_categorisationTable)
-       temp <- categorisationTable$data()
-        temp <- temp |> dplyr::mutate(Category = 
-          sapply(categorisationTable$data()[[input$search_col_categorisationTable]], classify_term,
-                                      selected_categories = input$selected_categories)
-                                    )
+  #  # Perform classification
+  #  observeEvent(input$classify, {
+  #     #  req(input$selected_categories, categorisationTable(), input$search_col_categorisationTable)
+  #      temp <- categorisationTable$data()
+  #       temp <- temp |> dplyr::mutate(Category = 
+  #         sapply(categorisationTable$data()[[input$search_col_categorisationTable]], classify_term,
+  #                                     selected_categories = input$selected_categories)
+  #                                   )
      
 
-     categorisationTable$data <- reactive(temp)
-   })
+  #    categorisationTable$data <- reactive(temp)
+  #  })
   }
 
   # Run the application
