@@ -15,6 +15,7 @@ loadTableModule <- function(id, included) {
     # Either get codelist from codelist maker ...
     observeEvent(input$get_codelist, {
       v$thistable <- included()
+
     })
 
     # ... or import from file.

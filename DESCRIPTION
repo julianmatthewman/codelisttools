@@ -24,4 +24,9 @@ Imports:
     rio,
     shiny,
     stringi,
-    stringr
+    stringr,
+    jsonlite,
+    ellmer,
+    readr,
+    tm,
+    tidytext
