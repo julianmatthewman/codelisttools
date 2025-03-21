@@ -146,7 +146,7 @@ myApp <- function(...) {
         fluidRow(
             column(3,
           id = "withborder",
-          h4("External codelist"),
+          h4("Terms"),
           verbatimTextOutput("externalterms")
             ),
           column(3,
@@ -579,7 +579,7 @@ myApp <- function(...) {
 
     # Make dynamically updating UI for picking the columns to search in
     output$select_search_cols_external_codelist <- renderUI({
-      selectInput("externalcol", "Select column to search in", names(external_codelist$data),
+      selectInput("externalcol", "Select column with terms", names(external_codelist$data),
         names(external_codelist$data)[[1]],
         multiple = FALSE
       )
@@ -587,10 +587,7 @@ myApp <- function(...) {
     externalcol <- reactive(input$externalcol)
     externalterms <- reactive(external_codelist$data[[externalcol()]])
 
-    output$externalterms<-renderPrint({
-      cat("Searched in:\n")
-      print(externalterms())
-  })
+    output$externalterms<-renderPrint({print(externalterms())})
     
     # Function to make n-grams
     ngramer <- function(x, n){
@@ -598,30 +595,29 @@ myApp <- function(...) {
         codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
         stop_words <- tm::stopwords("en")
         codelist_clean <- tm::removeWords(codelist_clean, stop_words)
-        df <- data.frame(text =codelist_clean, stringsAsFactors = FALSE )
+        df <- data.frame(text = codelist_clean, stringsAsFactors = FALSE )
         ngram <- df %>%
             tidytext::unnest_tokens(term, text, token = "ngrams", n = n) %>%
-            dplyr::count(term, sort = TRUE)
+            dplyr::count(term, sort = TRUE) |> 
+            dplyr::filter(term!="")
         return(ngram)
     }
     
+    # Make n-grams
     monograms <- reactive({ ngramer(externalterms(), 1) })
     bigrams <- reactive({ ngramer(externalterms(), 2) })
     trigrams <- reactive({ ngramer(externalterms(), 3) })
-        
-    output$monograms <-  DT::renderDataTable(
-      {monograms()[drop = FALSE]},options = dtoptions
-    )
-    output$bigrams <-  DT::renderDataTable(
-        {bigrams()[drop = FALSE]},options = dtoptions
-    )
-    output$trigrams <-  DT::renderDataTable(
-        {trigrams()[drop = FALSE]},options = dtoptions
-    )
     
+    # Render n-grams
+    output$monograms <-  DT::renderDataTable({monograms()[drop = FALSE]},options = dtoptions)
+    output$bigrams <-  DT::renderDataTable({bigrams()[drop = FALSE]},options = dtoptions)
+    output$trigrams <-  DT::renderDataTable({trigrams()[drop = FALSE]},options = dtoptions)
+    
+
     # //////////////////////////////////////////////////////////////////////////
     # 4. CATEGORISATION -------------------------------------------------------
     # //////////////////////////////////////////////////////////////////////////
+
     # Initialize reactive values for categories
     categories <- reactiveVal(c("Diagnosis", "Administration", "Personal history", 
                                 "Family history", "Symptom", "Negation"))
@@ -652,7 +648,7 @@ myApp <- function(...) {
     
    # Loading of tables is handled via modules
    categorisationTable <- reactiveValues(data = NULL)
-   categorisationTable$data <- loadTableModule("categorisation", reactive(included()))
+   categorisationTable$data <- loadTableModule("categorisation", reactive(included() |> dplyr::mutate(Category = NA)))
     
 
    output$categorisationTable <- DT::renderDataTable({

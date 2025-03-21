@@ -14,7 +14,7 @@ loadTableModule <- function(id, included) {
 
     # Either get codelist from codelist maker ...
     observeEvent(input$get_codelist, {
-      v$thistable <- included() |> dplyr::mutate(Category = NA)
+      v$thistable <- included()
 
     })
 
@@ -25,7 +25,7 @@ loadTableModule <- function(id, included) {
         return(NULL)
       }
       v$thistable <- rio::import(inFile$datapath) |> 
-          dplyr::mutate(dplyr::across(dplyr::everything(), as.character), Category = NA)
+          dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
     })
     return(reactive(v$thistable))
   })
