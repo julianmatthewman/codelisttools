@@ -194,7 +194,8 @@ myApp <- function(...) {
           ),
           column(
             6,
-            htmltools::includeMarkdown("docs/codelist_comparison_README.md")
+            htmltools::includeMarkdown("docs/codelist_comparison_README.md"),
+            htmltools::includeMarkdown("docs/searchterm_extraction_README.md")
           )
         )
       )
