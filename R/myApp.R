@@ -8,17 +8,17 @@ myApp <- function(...) {
   # https://mastering-shiny.org/scaling-packaging.html#deploying-your-app-package
   # In RStudio press Cmd/Ctrl + Shift + L to run devtools::load_all(), then run the app with myApp()
   # To deploy call rsconnect::deployApp()
-
-
+  
+  
   # Import all browsers in the "in" folder
   paths <- dir("in", full.names = TRUE)
   browsers <- purrr::map(paths, \(x) rio::import(x, colClasses = c("character"))) |>
     purrr::set_names(basename(tools::file_path_sans_ext(paths)))
-
+  
   # product <- rio::import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
-
+  
   # UI ----------------------------------------------------------------------
-
+  
   ui <- fluidPage(
     navbarPage(
       "Codelist tools",
@@ -40,26 +40,26 @@ myApp <- function(...) {
             fileInput("import_codebrowser", label = NULL),
             hr(),
             textAreaInput("searchterms",
-              "Searchterms",
-              "diabetes",
-              resize = "vertical"
+                          "Searchterms",
+                          "diabetes",
+                          resize = "vertical"
             ),
             textAreaInput("exclusionterms",
-              "Exclusionterms",
-              "insipidus",
-              resize = "vertical"
+                          "Exclusionterms",
+                          "insipidus",
+                          resize = "vertical"
             ),
             fileInput("import_search_terms", "Import Search Terms", accept = c(".json",".csv")),
             htmlOutput("select_search_cols"),
             checkboxInput("termset_search_method",
-              label = tags$span(
-                "Termset search method",
-                tags$i(
-                  class = "glyphicon glyphicon-info-sign",
-                  style = "color:#0072B2;",
-                  title = 'For search rules see "About" Tab'
-                )
-              )
+                          label = tags$span(
+                            "Termset search method",
+                            tags$i(
+                              class = "glyphicon glyphicon-info-sign",
+                              style = "color:#0072B2;",
+                              title = 'For search rules see "About" Tab'
+                            )
+                          )
             ),
             verbatimTextOutput("randomstrings"),
             hr(),
@@ -67,7 +67,7 @@ myApp <- function(...) {
             hr(),
             htmlOutput("select_display_cols"),
           ),
-
+          
           # Main panel with outputs
           mainPanel(
             width = 9,
@@ -144,15 +144,15 @@ myApp <- function(...) {
           )
         ),
         fluidRow(
-            column(3,
-          id = "withborder",
-          h4("Terms"),
-          verbatimTextOutput("externalterms")
-            ),
           column(3,
-              id = "withborder",
-              h4("Monograms"),
-              DT::dataTableOutput("monograms")
+                 id = "withborder",
+                 h4("Terms"),
+                 verbatimTextOutput("externalterms")
+          ),
+          column(3,
+                 id = "withborder",
+                 h4("Monograms"),
+                 DT::dataTableOutput("monograms")
           ),
           column(3,
                  id = "withborder",
@@ -173,18 +173,34 @@ myApp <- function(...) {
             fluidRow(
               loadTableModuleUI("categorisation"),
               htmlOutput("select_search_cols_categorisationTable"),
+              radioButtons("model_choice", "Choose model:",
+                           choices = list("None" = "none",
+                                          "Gemini (API required)" = "gemini",
+                                          "Local (Ollama)" = "ollama"
+                           ),
+                           selected = "none"),
+              conditionalPanel(
+                condition = "input.model_choice == 'ollama'",
+                textInput("ollama_model_name", "Ollama model name:")
+              ),
+              conditionalPanel(
+                condition = "input.model_choice == 'gemini'",
+                #add text output that says "API key required"
+                helpText("To run a Gemini model, an API key is required. Generate an API key at https://aistudio.google.com/app/apikey and save it as GOOGLE_API_KEY=<your_api_key> in your .Renviron file. Restart R to use the API key.")
+                
+              ),
               uiOutput("category_checkboxes"),
               textInput("new_category", "Add New Category"),
               actionButton("add_category", "Add Category"),
               actionButton("classify", "Classify Codes")
             )
           ),
-        mainPanel(
-          id = "withborder",
-          DT::dataTableOutput("categorisationTable"),
-          DT::dataTableOutput("categorisationTableClassified")
+          mainPanel(
+            id = "withborder",
+            DT::dataTableOutput("categorisationTable"),
+            DT::dataTableOutput("categorisationTableClassified")
           )        
-      )),
+        )),
       tabPanel(
         "About",
         fluidRow(
@@ -200,29 +216,29 @@ myApp <- function(...) {
       )
     )
   )
-
-
-
+  
+  
+  
   # SERVER ------------------------------------------------------------------
-
+  
   server <- function(input, output, session) {
     options(shiny.maxRequestSize = 100 * 1024^2)
-
+    
     # //////////////////////////////////////////////////////////////////////////
     # 1. CODELIST MAKER -------------------------------------------------------
     # //////////////////////////////////////////////////////////////////////////
-
-
+    
+    
     # Select browser ----------------------------------------------------------
-
+    
     # Make a reactiveValues to store the data; downstream functions will use whatever is stored in here ("duelling values", see https://stackoverflow.com/questions/29716868/r-shiny-how-to-get-an-reactive-data-frame-updated-each-time-pressing-an-actionb)
     codebrowser <- reactiveValues(data = NULL)
-
+    
     # Either select built in browser ...
     observeEvent(input$select_codebrowser, {
       codebrowser$data <- browsers[[input$select_codebrowser]]
     })
-
+    
     # ... or import from file.
     observeEvent(input$import_codebrowser, {
       inFile <- input$import_codebrowser
@@ -231,21 +247,21 @@ myApp <- function(...) {
       }
       codebrowser$data <- rio::import(inFile$datapath, colClasses = c("character"))
     })
-
+    
     # Select search terms ----------------------------------------------------------
     
     search_browser <- reactiveValues(
-        includeTerms = NULL,
-        excludeTerms = NULL
+      includeTerms = NULL,
+      excludeTerms = NULL
     )
     
     observeEvent(input$import_search_terms, {
-        req(input$import_search_terms)
-        
-        file_path <- input$import_search_terms$datapath
-        file_ext <- tools::file_ext(input$import_search_terms$name)
-        
-        if (file_ext == "json") {
+      req(input$import_search_terms)
+      
+      file_path <- input$import_search_terms$datapath
+      file_ext <- tools::file_ext(input$import_search_terms$name)
+      
+      if (file_ext == "json") {
         # Read and parse JSON file
         json_data <- jsonlite::fromJSON(input$import_search_terms$datapath)
         
@@ -257,10 +273,10 @@ myApp <- function(...) {
         include_terms_text <- paste(json_data$includeTerms, collapse = "\n")
         exclude_terms_text <- paste(json_data$excludeTerms, collapse = "\n")
         
-        } else if (file_ext == "csv") {
-            
+      } else if (file_ext == "csv") {
+        
         suppressWarnings({
-             csv_data <- readr::read_csv(file_path, col_select = c(searchterms, exclusionterms), show_col_types = FALSE)
+          csv_data <- readr::read_csv(file_path, col_select = c(searchterms, exclusionterms), show_col_types = FALSE)
         })
         
         csvsearchterms <- csv_data$searchterms[!is.na(csv_data$searchterms) & csv_data$searchterms != ""]
@@ -273,69 +289,69 @@ myApp <- function(...) {
         include_terms_text <- paste(csvsearchterms, collapse = "\n")
         exclude_terms_text <- paste(csvexcludeterms, collapse = "\n")        
         
-        } else {
-            showNotification("Unsupported file format. Please upload JSON or CSV.", type = "error")
-            return()
-        }
-        
-        # Update the textAreaInput fields dynamically
-        updateTextAreaInput(session, "searchterms", value = include_terms_text)
-        updateTextAreaInput(session, "exclusionterms", value = exclude_terms_text)  
-        
+      } else {
+        showNotification("Unsupported file format. Please upload JSON or CSV.", type = "error")
+        return()
+      }
+      
+      # Update the textAreaInput fields dynamically
+      updateTextAreaInput(session, "searchterms", value = include_terms_text)
+      updateTextAreaInput(session, "exclusionterms", value = exclude_terms_text)  
+      
     })
     
     
     # Make dynamic UIs to pick columns ----------------------------------------
-
-
+    
+    
     # Make dynamically updating UI for picking the columns to search in
     output$select_search_cols <- renderUI({
       selectInput("cols", "Select column to search in", names(codebrowser$data),
-        ifelse("DESCRIPTION" %in% names(codebrowser$data), "DESCRIPTION",
-          ifelse("productname" %in% names(codebrowser$data), "productname",
-            ifelse("readterm" %in% names(codebrowser$data), "readterm", names(codebrowser$data)[[1]])
-          )
-        ),
-        multiple = FALSE
+                  ifelse("DESCRIPTION" %in% names(codebrowser$data), "DESCRIPTION",
+                         ifelse("productname" %in% names(codebrowser$data), "productname",
+                                ifelse("readterm" %in% names(codebrowser$data), "readterm", names(codebrowser$data)[[1]])
+                         )
+                  ),
+                  multiple = FALSE
       )
     })
-
+    
     # Make dynamically updating UI for picking the columns to display
     output$select_display_cols <- renderUI({
       selectInput("displaycolumns", "Select columns to display", names(codebrowser$data), multiple = TRUE)
     })
-
+    
     # Make dynamically updating UI for picking the column to check
     output$select_check_cols <- renderUI({
       selectInput("checkcol",
-        label = NULL, names(codebrowser$data),
-        ifelse("USAGE" %in% names(codebrowser$data), "USAGE", names(codebrowser$data)[[1]])
+                  label = NULL, names(codebrowser$data),
+                  ifelse("USAGE" %in% names(codebrowser$data), "USAGE", names(codebrowser$data)[[1]])
       )
     })
-
+    
     # Make dynamically updating UI for picking the column to match for descendants
     output$select_code_cols <- renderUI({
       selectInput("codecol",
-        label = NULL, names(codebrowser$data),
-        ifelse("CODE" %in% names(codebrowser$data), "CODE", names(codebrowser$data)[[1]])
+                  label = NULL, names(codebrowser$data),
+                  ifelse("CODE" %in% names(codebrowser$data), "CODE", names(codebrowser$data)[[1]])
       )
     })
-
-
+    
+    
     # Get values from input ---------------------------------------------------
-
+    
     termset_search_method <- reactive(input$termset_search_method)
     descendant_matching <- reactive(input$descendant_matching)
     crosstab <- reactive(input$crosstab)
-
+    
     # Make vectors from the inputs
     searchterms <- reactive(unlist(strsplit(input$searchterms, "\n"))) |> debounce(2000)
     exclusionterms <- reactive(unlist(strsplit(input$exclusionterms, "\n"))) |> debounce(2000)
     checkcol <- reactive(input$checkcol)
     codecol <- reactive(input$codecol)
-
+    
     cols <- reactive(input$cols)
-
+    
     displaycolumns <- reactive({
       if (!is.null(input$displaycolumns)) {
         input$displaycolumns
@@ -343,26 +359,26 @@ myApp <- function(...) {
         names(codebrowser$data)
       }
     })
-
-
+    
+    
     # Make the Tables ---------------------------------------------------------
-
+    
     termsearched <- reactive({
       validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
       codebrowser$data |>
         dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms(), termset_search_method()))
     })
-
+    
     excluded <- reactive({
       termsearched() |>
         dplyr::filter(termsearch(eval(dplyr::sym(cols())), exclusionterms(), termset_search_method()) &
-          !(tolower(eval(dplyr::sym(cols()))) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
+                        !(tolower(eval(dplyr::sym(cols()))) %in% tolower(searchterms()))) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
     })
-
+    
     included <- reactive({
       dplyr::setdiff(termsearched(), excluded())
     })
-
+    
     checks <- reactive({
       validate(need(crosstab() == TRUE, message = FALSE))
       included() |>
@@ -370,7 +386,7 @@ myApp <- function(...) {
         dplyr::tally() |>
         dplyr::arrange(desc(n))
     })
-
+    
     descendants <- reactive({
       validate(
         need(codecol() %in% names(codebrowser$data), "Loading"),
@@ -383,10 +399,10 @@ myApp <- function(...) {
       if (length(exclusionterms()) > 0) temp <- dplyr::filter(temp, !termsearch(eval(dplyr::sym(cols())), exclusionterms(), termset_search_method()))
       dplyr::setdiff(temp, included())
     })
-
-
+    
+    
     # Make extra highlighted Tables -------------------------------------------
-
+    
     # Make a function to highlight text (to be used in str_replace_all)
     highlight_yellow <- function(x) {
       paste0("<span style='background-color:yellow;'>", x, "</span>")
@@ -394,9 +410,9 @@ myApp <- function(...) {
     highlight_green <- function(x) {
       paste0("<span style='background-color:LightGreen;'>", x, "</span>")
     }
-
-
-
+    
+    
+    
     # Make included table with highlighted words
     termsearched_highlighted <- reactive({
       # Transform searchterms so they are in this form: term1|term2|term3|...
@@ -404,7 +420,7 @@ myApp <- function(...) {
         strsplit(split = " ") |>
         purrr::map(~ paste(.x, collapse = "|")) |>
         unlist()
-
+      
       termsearched() |>
         dplyr::mutate(
           dplyr::across(
@@ -417,7 +433,7 @@ myApp <- function(...) {
           )
         )
     })
-
+    
     # Make excluded table with highlighted words
     excluded_highlighted <- reactive({
       excluded() |>
@@ -432,14 +448,14 @@ myApp <- function(...) {
           )
         )
     })
-
-
+    
+    
     # Render Text and Tables -------------------------------------------------------
-
+    
     # Set table options
     dtoptions <- list(pageLength = 5, scrollX = TRUE)
     # Set which tables to display
-
+    
     # Render tables
     output$termsearched <- DT::renderDataTable(
       {
@@ -448,7 +464,7 @@ myApp <- function(...) {
       escape = FALSE,
       options = dtoptions
     )
-
+    
     output$excluded <- DT::renderDataTable(
       {
         excluded_highlighted()[, displaycolumns(), drop = FALSE]
@@ -456,14 +472,14 @@ myApp <- function(...) {
       escape = FALSE,
       options = dtoptions
     ) # Need escape = FALSE if including HTML formatting
-
+    
     output$included <- DT::renderDataTable(
       {
         included()[, displaycolumns(), drop = FALSE]
       },
       options = dtoptions
     )
-
+    
     # Render descendants
     output$descendants <- DT::renderDataTable(
       {
@@ -471,14 +487,14 @@ myApp <- function(...) {
       },
       options = dtoptions
     )
-
+    
     # Render extra table containing checks
     output$checks <- renderTable(
       checks()
     )
-
-
-
+    
+    
+    
     # Print values
     output$searchterms <- renderPrint({
       cat("Searchterms:\n")
@@ -492,18 +508,18 @@ myApp <- function(...) {
       cat("Searched in:\n")
       print(cols())
     })
-
-
+    
+    
     # Downloadable csvs of final codelist and terms --------------------------------------
-
+    
     # Make table of searchterms
     termtable <- reactive({
       searchterms <- searchterms()
       exclusionterms <- exclusionterms()
       searched_in_column <- cols()
       searchmethod <- ifelse(termset_search_method() == TRUE,
-        "Term sets search method, see 10.1371/journal.pone.0212291",
-        "termsearch <- function(lookup, terms) {stringr::str_detect(lookup, stringr::regex(paste(terms, collapse = '|'), ignore_case = TRUE))}; initial <- dplyr::filter(DATA, termsearch(COLUMN, SEARCHTERMS)); excluded <- dplyr::filter(initial, termsearch(COLUMN, EXCLUSIONTERMS); final <- dplyr::setdiff(inital, excluded)"
+                             "Term sets search method, see 10.1371/journal.pone.0212291",
+                             "termsearch <- function(lookup, terms) {stringr::str_detect(lookup, stringr::regex(paste(terms, collapse = '|'), ignore_case = TRUE))}; initial <- dplyr::filter(DATA, termsearch(COLUMN, SEARCHTERMS)); excluded <- dplyr::filter(initial, termsearch(COLUMN, EXCLUSIONTERMS); final <- dplyr::setdiff(inital, excluded)"
       )
       n <- max(length(searchterms), length(exclusionterms), length(searched_in_column), length(searchmethod))
       length(searchterms) <- n
@@ -512,15 +528,15 @@ myApp <- function(...) {
       length(searchmethod) <- n
       cbind(searchterms, exclusionterms, searched_in_column, searchmethod)
     })
-
-
+    
+    
     # Make random string to include in filename
     randomstrings <- reactive({
       termtable() # Make random strings that update whenever either of the tables updates
       included()
       stringi::stri_rand_strings(1, 6)
     })
-
+    
     # Zip codelist and terms and provide via download button
     output$downloadData <- downloadHandler(
       filename = function() {
@@ -530,44 +546,44 @@ myApp <- function(...) {
         tmpdir <- tempdir()
         setwd(tempdir())
         print(tempdir())
-
+        
         fs <- c("codelist.csv", "terms.csv", "excluded.csv")
         utils::write.csv(included(), "codelist.csv", row.names = FALSE, quote = FALSE, na = "")
         utils::write.csv(termtable(), "terms.csv", row.names = FALSE, quote = FALSE, na = "")
         utils::write.csv(excluded(), "excluded.csv", row.names = FALSE, quote = FALSE, na = "")
-
+        
         utils::zip(zipfile = filename, files = fs)
       },
       contentType = "application/zip"
     )
-
-
+    
+    
     # //////////////////////////////////////////////////////////////////////////
     # 2. CODELIST COMPARISON ##################################################
     # //////////////////////////////////////////////////////////////////////////
-
+    
     # Make dynamically updating UI for picking the column to be matched on
     output$matchcolumn <- renderUI({
       selectInput("matchcolumn",
-        label = "Match on", intersect(names(lefttable()), names(righttable())),
-        NULL
+                  label = "Match on", intersect(names(lefttable()), names(righttable())),
+                  NULL
       )
     })
     matchcolumn <- reactive(input$matchcolumn)
-
+    
     # Loading, joining, and rendering of tables is handled via modules
     lefttable <- loadTableModule("left", reactive(included()))
     righttable <- loadTableModule("right", reactive(included()))
     joinRenderTableModule("left", reactive(lefttable()), reactive(righttable()), reactive(matchcolumn()))
     joinRenderTableModule("right", reactive(righttable()), reactive(lefttable()), reactive(matchcolumn()))
-
-
+    
+    
     # //////////////////////////////////////////////////////////////////////////
     # 3. SEARCHTERM EXTRACTION -------------------------------------------------------
     # //////////////////////////////////////////////////////////////////////////
-
+    
     external_codelist <- reactiveValues(data = NULL)
-
+    
     # Make a reactiveValues to store the data; downstream functions will use whatever is stored in here ("duelling values", see https://stackoverflow.com/questions/29716868/r-shiny-how-to-get-an-reactive-data-frame-updated-each-time-pressing-an-actionb)
     observeEvent(input$import_external_codelist, {
       inFile <- input$import_external_codelist
@@ -576,31 +592,31 @@ myApp <- function(...) {
       }
       external_codelist$data <- rio::import(inFile$datapath, colClasses = c("character"))
     })
-
+    
     # Make dynamically updating UI for picking the columns to search in
     output$select_search_cols_external_codelist <- renderUI({
       selectInput("externalcol", "Select column with terms", names(external_codelist$data),
-        names(external_codelist$data)[[1]],
-        multiple = FALSE
+                  names(external_codelist$data)[[1]],
+                  multiple = FALSE
       )
     })
     externalcol <- reactive(input$externalcol)
     externalterms <- reactive(external_codelist$data[[externalcol()]])
-
+    
     output$externalterms<-renderPrint({print(externalterms())})
     
     # Function to make n-grams
     ngramer <- function(x, n){
-        codelist_clean <- tolower(x)
-        codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
-        stop_words <- tm::stopwords("en")
-        codelist_clean <- tm::removeWords(codelist_clean, stop_words)
-        df <- data.frame(text = codelist_clean, stringsAsFactors = FALSE )
-        ngram <- df %>%
-            tidytext::unnest_tokens(term, text, token = "ngrams", n = n) %>%
-            dplyr::count(term, sort = TRUE) |> 
-            dplyr::filter(term!="")
-        return(ngram)
+      codelist_clean <- tolower(x)
+      codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
+      stop_words <- tm::stopwords("en")
+      codelist_clean <- tm::removeWords(codelist_clean, stop_words)
+      df <- data.frame(text = codelist_clean, stringsAsFactors = FALSE )
+      ngram <- df %>%
+        tidytext::unnest_tokens(term, text, token = "ngrams", n = n) %>%
+        dplyr::count(term, sort = TRUE) |> 
+        dplyr::filter(term!="")
+      return(ngram)
     }
     
     # Make n-grams
@@ -613,91 +629,143 @@ myApp <- function(...) {
     output$bigrams <-  DT::renderDataTable({bigrams()[drop = FALSE]},options = dtoptions)
     output$trigrams <-  DT::renderDataTable({trigrams()[drop = FALSE]},options = dtoptions)
     
-
+    
     # //////////////////////////////////////////////////////////////////////////
     # 4. CATEGORISATION -------------------------------------------------------
     # //////////////////////////////////////////////////////////////////////////
-
+    
     # Initialize reactive values for categories
     categories <- reactiveVal(c("Diagnosis", "Administration", "Personal history", 
                                 "Family history", "Symptom", "Negation"))
     
     # Render the checkbox group UI
     output$category_checkboxes <- renderUI({
-        checkboxGroupInput("selected_categories", 
-                           "Select categories for classification:",
-                           choices = categories(),
-                           selected = categories())
+      checkboxGroupInput("selected_categories", 
+                         "Select categories for classification:",
+                         choices = categories(),
+                         selected = categories())
     })
     
     # Add new category handler
     observeEvent(input$add_category, {
-        if (input$new_category != "" && !(input$new_category %in% categories())) {
-            # Update the reactive categories list
-            new_cats <- c(categories(), input$new_category)
-            categories(new_cats)
-            
-            # Clear the input field
-            updateTextInput(session, "new_category", value = "")
-        }
+      if (input$new_category != "" && !(input$new_category %in% categories())) {
+        # Update the reactive categories list
+        new_cats <- c(categories(), input$new_category)
+        categories(new_cats)
+        
+        # Clear the input field
+        updateTextInput(session, "new_category", value = "")
+      }
     })
-    # Initialize chat model
-    chat <- ellmer::chat_gemini(model = "gemini-2.0-flash",
-                        system_prompt = "Classify clinical codes into clinically meaningful categories.")
     
+    # Initialize chat models (available globally)
+    gemini_chat <<- NULL
+    ollama_chat <<- NULL
     
-   # Loading of tables is handled via modules
-   categorisationTable <- reactiveValues(data = NULL)
-   categorisationTable$data <- loadTableModule("categorisation", reactive(included() |> dplyr::mutate(Category = NA)))
+    # Loading of tables is handled via modules
+    categorisationTable <- reactiveValues(data = NULL)
+    categorisationTable$data <- loadTableModule("categorisation", reactive(included() |> dplyr::mutate(Category = NA)))
     
-
-   output$categorisationTable <- DT::renderDataTable({
-     DT::datatable(categorisationTable$data(),
-      class = 'nowrap display',
-      extensions = "Buttons",
-      options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
-   })
-   
-   # Update the column selection
-   output$select_search_cols_categorisationTable <- renderUI({
-       selectInput("search_col_categorisationTable", "Select column to search in", names(categorisationTable$data()),
-                   names(categorisationTable$data())[[1]],
-                   multiple = FALSE
-       )
-   })
-   search_cols_categorisationTable <- reactive(input$search_col_categorisationTable)
-
-   # Add new category
-   observeEvent(input$add_category, {
-       if (input$new_category != "") {
-           updateCheckboxGroupInput(session, "selected_categories",
-                                    choices = c(input$selected_categories, input$new_category),
-                                    selected = c(input$selected_categories, input$new_category))
-       }
-   })
-
-   # Function to classify terms
-   classify_term <- function(term, selected_categories) {
-       if (length(selected_categories) == 0) return(NA)
-       type_classification <- ellmer::type_enum("Category", values = selected_categories)
-       response <- chat$extract_data(term, type = type_classification)
-       return(response)
-   }
-
-   # Perform classification
-   observeEvent(input$classify, {
-      #  req(input$selected_categories, categorisationTable(), input$search_col_categorisationTable)
-       temp <- categorisationTable$data()
-        temp <- temp |> dplyr::mutate(Category = 
-          sapply(categorisationTable$data()[[input$search_col_categorisationTable]], classify_term,
-                                      selected_categories = input$selected_categories)
-                                    )
-     
-
-     categorisationTable$data <- reactive(temp)
-   })
+    output$categorisationTable <- DT::renderDataTable({
+      DT::datatable(categorisationTable$data(),
+                    class = 'nowrap display',
+                    extensions = "Buttons",
+                    options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis")))
+    })
+    
+    # Update the column selection
+    output$select_search_cols_categorisationTable <- renderUI({
+      selectInput("search_col_categorisationTable", "Select column to search in", names(categorisationTable$data()),
+                  names(categorisationTable$data())[[1]],
+                  multiple = FALSE
+      )
+    })
+    search_cols_categorisationTable <- reactive(input$search_col_categorisationTable)
+    
+    # Perform classification
+    observeEvent(input$classify, {
+      req(input$search_col_categorisationTable)
+      req(categorisationTable$data())
+      req(input$model_choice)
+      
+      # Show notification if no model is selected
+      if (input$model_choice == "none") {
+        showNotification("No classification model selected", type = "warning")
+        return()
+      }
+      
+      # Get the model to use
+      model_type <- input$model_choice
+      
+      # Initialize the appropriate chat model if needed
+      if (model_type == "gemini" && is.null(gemini_chat)) {
+        gemini_chat <<- ellmer::chat_gemini(
+          model = "gemini-2.0-flash",
+          system_prompt = "Classify clinical codes into clinically meaningful categories."
+        )
+      } else if (model_type == "ollama" && is.null(ollama_chat)) {
+        req(input$ollama_model_name)
+        tryCatch({
+          ollama_chat <<- ellmer::chat_ollama(
+            model = input$ollama_model_name,
+            system_prompt = "Classify clinical codes into clinically meaningful categories."
+          )
+        }, error = function(e) {
+          showNotification(paste("Error initializing Ollama model:", e$message), type = "error")
+          return()
+        })
+      }
+      
+      # Get the active chat model
+      active_chat <- if (model_type == "gemini") gemini_chat else ollama_chat
+      
+      # Make sure we have a valid chat model
+      if (is.null(active_chat)) {
+        showNotification("Failed to initialize chat model", type = "error")
+        return()
+      }
+      
+      # Function to classify a term
+      classify_term <- function(term, selected_categories, active_chat) {
+        if (length(selected_categories) == 0) return(NA)
+        
+        tryCatch({
+          type_classification <- ellmer::type_enum("Category", values = selected_categories)
+          response <- active_chat$extract_data(term, type = type_classification)
+          return(response)
+        }, error = function(e) {
+          message("Error classifying term: ", e$message)
+          return(NA)
+        })
+      }
+      
+      # Create progress indicator
+      withProgress(message = 'Classifying...', value = 0, {
+        # Get the data
+        temp <- categorisationTable$data()
+        
+        # Get the total number of items
+        total_items <- nrow(temp)
+        
+        # Process each item
+        for (i in 1:total_items) {
+          # Update progress
+          incProgress(1/total_items, detail = paste("Processing item", i, "of", total_items))
+          
+          # Classify the term
+          term <- temp[[input$search_col_categorisationTable]][i]
+          result <- classify_term(term, input$selected_categories, active_chat)
+          
+          # Update the category
+          temp$Category[i] <- result
+        }
+        
+        # Update the reactive data
+        categorisationTable$data <- reactive(temp)
+      })
+    })
   }
-
+  
   # Run the application
   shinyApp(ui = ui, server = server)
-   }
+}
