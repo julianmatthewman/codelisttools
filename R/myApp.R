@@ -700,7 +700,7 @@ myApp <- function(...) {
       # Initialize the appropriate chat model if needed
       if (model_type == "gemini" && is.null(gemini_chat)) {
         gemini_chat <<- ellmer::chat_gemini(
-          model = "gemini-2.0-flash",
+          # model = "gemini-2.0-flash",
           system_prompt = "Classify clinical codes into clinically meaningful categories."
         )
       } else if (model_type == "ollama" && is.null(ollama_chat)) {
