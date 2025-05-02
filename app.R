@@ -543,12 +543,12 @@ loadSupport()
 
     # Make dynamically updating UI for picking the column to be matched on
     output$matchcolumn <- renderUI({
-      selectInput("matchcolumn",
+      selectInput("matchcolumn_in",
         label = "Match on", intersect(names(lefttable()), names(righttable())),
         NULL
       )
     })
-    matchcolumn <- reactive(input$matchcolumn)
+    matchcolumn <- reactive(input$matchcolumn_in)
 
     # Loading, joining, and rendering of tables is handled via modules
     lefttable <- loadTableModule("left", reactive(included()))
@@ -591,8 +591,8 @@ loadSupport()
         stop_words <- tm::stopwords("en")
         codelist_clean <- tm::removeWords(codelist_clean, stop_words)
         df <- data.frame(text = codelist_clean, stringsAsFactors = FALSE )
-        ngram <- df %>%
-            tidytext::unnest_tokens(term, text, token = "ngrams", n = n) %>%
+        ngram <- df |>
+            tidytext::unnest_tokens(term, text, token = "ngrams", n = n) |>
             dplyr::count(term, sort = TRUE) |> 
             dplyr::filter(term!="")
         return(ngram)
