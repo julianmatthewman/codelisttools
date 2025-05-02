@@ -7,15 +7,13 @@ myApp <- function(...) {
   # This shiny app is managed as an R package as described here:
   # https://mastering-shiny.org/scaling-packaging.html#deploying-your-app-package
   # In RStudio press Cmd/Ctrl + Shift + L to run devtools::load_all(), then run the app with myApp()
-  # To deploy call rsconnect::deployApp()
+  # Deploy via https://connect.posit.cloud/
 
 
   # Import all browsers in the "in" folder
   paths <- dir("in", full.names = TRUE)
   browsers <- purrr::map(paths, \(x) rio::import(x, colClasses = c("character"))) |>
     purrr::set_names(basename(tools::file_path_sans_ext(paths)))
-
-  # product <- rio::import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
 
   # UI ----------------------------------------------------------------------
 
