@@ -2,7 +2,7 @@
 #'
 library(shiny)
 loadSupport()
-# Run tests with shiny::runTests()
+# Run tests with testthat::test_dir("tests")
 # Deploy via https://connect.posit.cloud/
 
 
