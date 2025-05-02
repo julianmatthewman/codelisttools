@@ -1,4 +1,4 @@
-# codelist-tools
+# codelisttools
 
 [Shiny app](https://julianmatthewman-codelisttools.share.connect.posit.cloud) for making and comparing clinical codelists.
 
