@@ -14,9 +14,7 @@ myApp <- function(...) {
   paths <- dir("in", full.names = TRUE)
   browsers <- purrr::map(paths, \(x) rio::import(x, colClasses = c("character"))) |>
     purrr::set_names(basename(tools::file_path_sans_ext(paths)))
-  
-  # product <- rio::import("/Users/Julian/Documents/GitHub/2021_SkinEpiExtract/codelists/product.dta")
-  
+    
   # UI ----------------------------------------------------------------------
   
   ui <- fluidPage(
