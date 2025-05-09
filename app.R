@@ -114,7 +114,7 @@ loadSupport()
             fluidRow(
               id = "withborder",
               column(9, loadTableModuleUI("left")),
-              column(3, htmlOutput("matchcolumn"), style = "margin-bottom: -25px;")
+              column(3, htmlOutput("matchcolumn"), style = "margin-bottom: -15px;")
             ),
             fluidRow(id = "withborder", joinRenderTableModuleUI("left"))
           ),
@@ -126,14 +126,14 @@ loadSupport()
         )
       ),
       tabPanel(
-        "Extract searchterms",
+        "Word frequency",
         fluidRow(
           column(
             12,
             fluidRow(
-              id = "withborder",
-              column(6, fileInput("import_external_codelist", label = "Import external codelist")),
-              column(6, htmlOutput("select_search_cols_external_codelist"))
+              id = "withborder", 
+              column(6, loadTableModuleUI("cl_for_word_freq")),
+              column(6, htmlOutput("select_search_cols_word_freq"), style = "margin-bottom: -15px;")
             )
           )
         ),
@@ -141,7 +141,7 @@ loadSupport()
             column(3,
           id = "withborder",
           h4("Terms"),
-          verbatimTextOutput("externalterms")
+          verbatimTextOutput("wordfreqterms")
             ),
           column(3,
               id = "withborder",
@@ -189,7 +189,7 @@ loadSupport()
           column(
             6,
             htmltools::includeMarkdown("docs/codelist_comparison_README.md"),
-            htmltools::includeMarkdown("docs/searchterm_extraction_README.md")
+            htmltools::includeMarkdown("docs/word_frequency_README.md")
           )
         )
       )
@@ -558,31 +558,23 @@ loadSupport()
 
 
     # //////////////////////////////////////////////////////////////////////////
-    # 3. SEARCHTERM EXTRACTION -------------------------------------------------------
+    # 3. WORD FREQUENCY -------------------------------------------------------
     # //////////////////////////////////////////////////////////////////////////
 
-    external_codelist <- reactiveValues(data = NULL)
+    cl_for_word_freq <- loadTableModule("cl_for_word_freq", reactive(included()))
 
-    # Make a reactiveValues to store the data; downstream functions will use whatever is stored in here ("duelling values", see https://stackoverflow.com/questions/29716868/r-shiny-how-to-get-an-reactive-data-frame-updated-each-time-pressing-an-actionb)
-    observeEvent(input$import_external_codelist, {
-      inFile <- input$import_external_codelist
-      if (is.null(inFile)) {
-        return(NULL)
-      }
-      external_codelist$data <- rio::import(inFile$datapath, colClasses = c("character"))
-    })
 
     # Make dynamically updating UI for picking the columns to search in
-    output$select_search_cols_external_codelist <- renderUI({
-      selectInput("externalcol", "Select column with terms", names(external_codelist$data),
-        names(external_codelist$data)[[1]],
+    output$select_search_cols_word_freq <- renderUI({
+      selectInput("wordfreqcol", "Select column with terms", names(cl_for_word_freq()),
+        names(cl_for_word_freq())[[1]],
         multiple = FALSE
       )
     })
-    externalcol <- reactive(input$externalcol)
-    externalterms <- reactive(external_codelist$data[[externalcol()]])
+    wordfreqcol <- reactive(input$wordfreqcol)
+    wordfreqterms <- reactive(cl_for_word_freq()[[wordfreqcol()]])
 
-    output$externalterms<-renderPrint({print(externalterms())})
+    output$wordfreqterms<-renderPrint({print(wordfreqterms())})
     
     # Function to make n-grams
     ngramer <- function(x, n){
@@ -599,9 +591,9 @@ loadSupport()
     }
     
     # Make n-grams
-    monograms <- reactive({ ngramer(externalterms(), 1) })
-    bigrams <- reactive({ ngramer(externalterms(), 2) })
-    trigrams <- reactive({ ngramer(externalterms(), 3) })
+    monograms <- reactive({ ngramer(wordfreqterms(), 1) })
+    bigrams <- reactive({ ngramer(wordfreqterms(), 2) })
+    trigrams <- reactive({ ngramer(wordfreqterms(), 3) })
     
     # Render n-grams
     output$monograms <-  DT::renderDataTable({monograms()[drop = FALSE]},options = dtoptions)

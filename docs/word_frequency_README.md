@@ -1,4 +1,4 @@
-## Extract searchterms
+## Word frequency
 
 ### About
 

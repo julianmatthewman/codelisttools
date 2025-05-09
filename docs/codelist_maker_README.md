@@ -16,7 +16,7 @@ You will see three tables:
 
 ### Checks
 
-Below, optional checks can be enabled. **Unmatched descendants** will show any not included entries that, within the selected column, are the same or start with any of the included entries.
+**Unmatched descendants** will show any not included entries that, within the selected column, are the same or start with any of the included entries.
 
 -   In hierarchical coding systems, such as ICD or Read, unmatched descendants can be found. For example, if code "E10" is included, all codes will be shown that start with "E10", such as "E10.1", "E10.2", etc., that aren't already included in the final codelist.
 
