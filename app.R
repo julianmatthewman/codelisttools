@@ -579,7 +579,7 @@ loadSupport()
     # Function to make n-grams
     ngramer <- function(x, n){
         codelist_clean <- tolower(x)
-        codelist_clean <- gsub("[[:punct:]]", "", codelist_clean)
+        codelist_clean <- gsub("[[:punct:]]", " ", codelist_clean)
         stop_words <- tm::stopwords("en")
         codelist_clean <- tm::removeWords(codelist_clean, stop_words)
         df <- data.frame(text = codelist_clean, stringsAsFactors = FALSE )
