@@ -1,7 +1,7 @@
 #' The Codelist Tools Shiny App
 #'
 library(shiny)
-library(markdown)
+library(markdown) #https://forum.posit.co/t/warning-error-in-loadnamespace-there-is-no-package-called-markdown/121671/4
 loadSupport()
 # Run tests with testthat::test_dir("tests")
 # Deploy via https://connect.posit.cloud/
