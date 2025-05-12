@@ -1,6 +1,7 @@
 #' The Codelist Tools Shiny App
 #'
 library(shiny)
+library(markdown)
 loadSupport()
 # Run tests with testthat::test_dir("tests")
 # Deploy via https://connect.posit.cloud/
