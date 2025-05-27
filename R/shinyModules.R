@@ -81,11 +81,11 @@ loadTableModuleUI <- function(id) {
   tagList(
     fluidRow(
       column(4,
-        style = "margin-top: 25px; margin-bottom: -25px",
+        style = "margin-top: 25px; margin-bottom: -15px",
         fileInput(ns("import_codelist"), label = NULL)
       ),
       column(4,
-        style = "margin-top: 25px; margin-bottom: -25px",
+        style = "margin-top: 25px; margin-bottom: -15px",
         actionButton(ns("get_codelist"), "from codelist maker")
       )
     )
