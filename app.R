@@ -23,8 +23,14 @@ loadSupport()
         sidebarLayout(
           sidebarPanel(
             width = 3,
-            tags$style(type = "text/css", "#searchterms {white-space: pre-wrap;}"),
-            tags$style(type = "text/css", "#exclusionterms {white-space: pre-wrap;}"),
+            tags$style(
+              type = "text/css",
+              "#searchterms {white-space: pre-wrap;}"
+            ),
+            tags$style(
+              type = "text/css",
+              "#exclusionterms {white-space: pre-wrap;}"
+            ),
             tags$style(type = "text/css", "#cols {white-space: pre-wrap;}"),
             selectInput(
               "select_codebrowser",
@@ -34,19 +40,26 @@ loadSupport()
             ),
             fileInput("import_codebrowser", label = NULL),
             hr(),
-            textAreaInput("searchterms",
+            textAreaInput(
+              "searchterms",
               "Searchterms",
               "diabetes",
               resize = "vertical"
             ),
-            textAreaInput("exclusionterms",
+            textAreaInput(
+              "exclusionterms",
               "Exclusionterms",
               "insipidus",
               resize = "vertical"
             ),
-            fileInput("import_search_terms", "Import Search Terms", accept = c(".json",".csv")),
+            fileInput(
+              "import_search_terms",
+              "Import Search Terms",
+              accept = c(".json", ".csv")
+            ),
             htmlOutput("select_search_cols"),
-            checkboxInput("termset_search_method",
+            checkboxInput(
+              "termset_search_method",
               label = tags$span(
                 "Termset search method",
                 tags$i(
@@ -93,15 +106,32 @@ loadSupport()
             fluidRow(
               id = "withborder",
               column(4, h4("Unmatched descendants")),
-              column(4, checkboxInput("descendant_matching", "Enable descendant searching, on column:")),
-              column(4, style = "margin-top: 5px;", htmlOutput("select_code_cols")),
+              column(
+                4,
+                checkboxInput(
+                  "descendant_matching",
+                  "Enable descendant searching, on column:"
+                )
+              ),
+              column(
+                4,
+                style = "margin-top: 5px;",
+                htmlOutput("select_code_cols")
+              ),
               DT::dataTableOutput("descendants"),
             ),
             fluidRow(
               id = "withborder",
               column(4, h4("Cross-tabulation")),
-              column(4, checkboxInput("crosstab", "Enable cross-tabulation, on column:")),
-              column(4, style = "margin-top: 5px;", htmlOutput("select_check_cols")),
+              column(
+                4,
+                checkboxInput("crosstab", "Enable cross-tabulation, on column:")
+              ),
+              column(
+                4,
+                style = "margin-top: 5px;",
+                htmlOutput("select_check_cols")
+              ),
               tableOutput("checks"),
             ),
           )
@@ -115,7 +145,11 @@ loadSupport()
             fluidRow(
               id = "withborder",
               column(9, loadTableModuleUI("left")),
-              column(3, htmlOutput("matchcolumn"), style = "margin-bottom: -15px;")
+              column(
+                3,
+                htmlOutput("matchcolumn"),
+                style = "margin-bottom: -15px;"
+              )
             ),
             fluidRow(id = "withborder", joinRenderTableModuleUI("left"))
           ),
@@ -132,32 +166,40 @@ loadSupport()
           column(
             12,
             fluidRow(
-              id = "withborder", 
+              id = "withborder",
               column(6, loadTableModuleUI("cl_for_word_freq")),
-              column(6, htmlOutput("select_search_cols_word_freq"), style = "margin-bottom: -15px;")
+              column(
+                6,
+                htmlOutput("select_search_cols_word_freq"),
+                style = "margin-bottom: -15px;"
+              )
             )
           )
         ),
         fluidRow(
-            column(3,
-          id = "withborder",
-          h4("Terms"),
-          verbatimTextOutput("wordfreqterms")
-            ),
-          column(3,
-              id = "withborder",
-              h4("Monograms"),
-              DT::dataTableOutput("monograms")
+          column(
+            3,
+            id = "withborder",
+            h4("Terms"),
+            verbatimTextOutput("wordfreqterms")
           ),
-          column(3,
-                 id = "withborder",
-                 h4("Bigrams"),
-                 DT::dataTableOutput("bigrams")
+          column(
+            3,
+            id = "withborder",
+            h4("Monograms"),
+            DT::dataTableOutput("monograms")
           ),
-          column(3,
-                 id = "withborder",
-                 h4("Trigrams"),
-                 DT::dataTableOutput("trigrams")
+          column(
+            3,
+            id = "withborder",
+            h4("Bigrams"),
+            DT::dataTableOutput("bigrams")
+          ),
+          column(
+            3,
+            id = "withborder",
+            h4("Trigrams"),
+            DT::dataTableOutput("trigrams")
           )
         )
       ),
@@ -166,14 +208,21 @@ loadSupport()
         sidebarLayout(
           sidebarPanel(
             fluidRow(
-              loadTableModuleUI("categorisation"),
+              fileInput("cat_import_codelist", label = "Upload or get codelist"),
+              div(style = "margin-top: -15px"),
+              actionButton("cat_get_codelist", "from codelist maker"),
+              div(style = "margin-bottom: 15px"),
               htmlOutput("select_search_cols_categorisationTable"),
-              radioButtons("model_choice", "Choose model:",
-                           choices = list("None" = "none",
-                                          "Gemini (API required)" = "gemini",
-                                          "Local (Ollama)" = "ollama"
-                           ),
-                           selected = "none"),
+              radioButtons(
+                "model_choice",
+                "Choose model:",
+                choices = list(
+                  "None" = "none",
+                  "Gemini (API required)" = "gemini",
+                  "Local (Ollama)" = "ollama"
+                ),
+                selected = "none"
+              ),
               conditionalPanel(
                 condition = "input.model_choice == 'ollama'",
                 textInput("ollama_model_name", "Ollama model name:")
@@ -181,8 +230,9 @@ loadSupport()
               conditionalPanel(
                 condition = "input.model_choice == 'gemini'",
                 #add text output that says "API key required"
-                helpText("To run a Gemini model, an API key is required. Generate an API key at https://aistudio.google.com/app/apikey and save it as GOOGLE_API_KEY=<your_api_key> in your .Renviron file. Restart R to use the API key.")
-                
+                helpText(
+                  "To run a Gemini model, an API key is required. Generate an API key at https://aistudio.google.com/app/apikey and save it as GOOGLE_API_KEY=<your_api_key> in your .Renviron file. Restart R to use the API key."
+                )
               ),
               uiOutput("category_checkboxes"),
               textInput("new_category", "Add New Category"),
@@ -194,8 +244,9 @@ loadSupport()
             id = "withborder",
             DT::dataTableOutput("categorisationTable"),
             DT::dataTableOutput("categorisationTableClassified")
-          )        
-        )),
+          )
+        )
+      ),
       tabPanel(
         "About",
         fluidRow(
@@ -780,20 +831,32 @@ loadSupport()
       }
     })
 
-    # Initialize chat models (available globally)
-    gemini_chat <<- NULL
-    ollama_chat <<- NULL
+    # Initialize chat models
+    gemini_chat <- NULL
+    ollama_chat <- NULL
 
-    # Loading of tables is handled via modules
-    categorisationTable <- reactiveValues(data = NULL)
-    categorisationTable$data <- loadTableModule(
-      "categorisation",
-      reactive(included() |> dplyr::mutate(Category = NA))
-    )
+    # Load Table (since the table is either uploaded, from the codelist maker or from the classification results, don't use the module here)
+    # Set value for table; Make a reactiveVal to store the data; call the function with a single argument to set the value 
+    categorisationTable <- reactiveVal(NULL)
+
+    # Either get codelist from codelist maker ...
+    observeEvent(input$cat_get_codelist, {
+      categorisationTable(included()) # Sets the value to the codelist from the codelist maker
+    })
+
+    # ... or import from file.
+    observeEvent(input$cat_import_codelist, {
+      inFile <- input$cat_import_codelist
+      if (is.null(inFile)) {
+        return(NULL)
+      }
+      categorisationTable(rio::import(inFile$datapath) |> 
+          dplyr::mutate(dplyr::across(dplyr::everything(), as.character))) # Sets the value to the codelist from the upload
+    })
 
     output$categorisationTable <- DT::renderDataTable({
       DT::datatable(
-        categorisationTable$data(),
+        categorisationTable(),
         class = 'nowrap display',
         extensions = "Buttons",
         options = list(
@@ -810,8 +873,8 @@ loadSupport()
       selectInput(
         "search_col_categorisationTable",
         "Select column to classify",
-        names(categorisationTable$data()),
-        names(categorisationTable$data())[[1]],
+        names(categorisationTable()),
+        names(categorisationTable())[[1]],
         multiple = FALSE
       )
     })
@@ -819,10 +882,10 @@ loadSupport()
       input$search_col_categorisationTable
     )
 
-    # Perform classification
+    # ... or perform classification
     observeEvent(input$classify, {
       req(input$search_col_categorisationTable)
-      req(categorisationTable$data())
+      req(categorisationTable())
       req(input$model_choice)
 
       # Show notification if no model is selected
@@ -836,7 +899,7 @@ loadSupport()
 
       # Initialize the appropriate chat model if needed
       if (model_type == "gemini" && is.null(gemini_chat)) {
-        gemini_chat <<- ellmer::chat_google_gemini(
+        gemini_chat <- ellmer::chat_google_gemini(
           # model = "gemini-2.0-flash",
           system_prompt = "Classify clinical codes into clinically meaningful categories."
         )
@@ -844,7 +907,7 @@ loadSupport()
         req(input$ollama_model_name)
         tryCatch(
           {
-            ollama_chat <<- ellmer::chat_ollama(
+            ollama_chat <- ellmer::chat_ollama(
               model = input$ollama_model_name,
               system_prompt = "Classify clinical codes into clinically meaningful categories."
             )
@@ -869,7 +932,7 @@ loadSupport()
       }
 
       # Classify the term
-      temp <- categorisationTable$data()
+      temp <- categorisationTable()
       tempcol <- input$search_col_categorisationTable
       terms <- temp[[tempcol]]
       result <- active_chat$chat_structured(
@@ -877,14 +940,18 @@ loadSupport()
         type = ellmer::type_array(
           items = ellmer::type_object(
             name = ellmer::type_string(),
-            category = ellmer::type_enum("Category", values = input$selected_categories),
+            category = ellmer::type_enum(
+              "Category",
+              values = input$selected_categories
+            ),
             explanation = ellmer::type_string()
           )
         )
       )
 
       # Update the reactive data
-      categorisationTable$data <- reactive(temp |> dplyr::bind_cols(result))
+      categorisationTable(temp |> dplyr::bind_cols(result)) # Sets the value to the codelist with classification results
+      showNotification("Classification completed", type="message")
     })
   }
 
