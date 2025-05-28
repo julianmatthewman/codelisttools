@@ -993,20 +993,21 @@ loadSupport()
               )
             )
           )
+          removeNotification(id="classify_notification")
+          showNotification("Classification completed", type="message")
         },
         error = function(e) {
+          removeNotification(id="classify_notification")
           showNotification(
             paste("Error in LLM API call:", e$message),
             type = "error"
           )
-          return(NULL)
+          result <<- NULL
         }
       )
 
       # Update the reactive data
       categorisationTable(temp |> dplyr::bind_cols(result)) # Sets the value to the codelist with classification results
-      removeNotification(id="classify_notification")
-      showNotification("Classification completed", type="message")
     })
   }
 
