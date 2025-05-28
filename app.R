@@ -234,6 +234,17 @@ loadSupport()
                   "To run a Gemini model, an API key is required. Generate an API key at https://aistudio.google.com/app/apikey and save it as GOOGLE_API_KEY=<your_api_key> in your .Renviron file. Restart R to use the API key."
                 )
               ),
+              fluidRow(
+                column(6,actionButton("set_prompt_review", "Review", width="100%")),
+                column(6,actionButton("set_prompt_classify", "Classify", width="100%"))
+              ),
+              textAreaInput(
+                "extra_prompt",
+                "Prompt",
+                "For each of the codes, specify whether it should be included in the codelist given the following description of the target codelist: (insert description here)",
+                resize = "vertical",
+                rows = 4
+              ),
               uiOutput("category_checkboxes"),
               textInput("new_category", "Add New Category"),
               actionButton("add_category", "Add Category"),
@@ -800,14 +811,16 @@ loadSupport()
     # //////////////////////////////////////////////////////////////////////////
 
     # Initialize reactive values for categories
-    categories <- reactiveVal(c(
+    categories_review <- c("Include","Unsure","Exclude")
+    categories_classify <- c(
       "Diagnosis",
       "Administration",
       "Personal history",
       "Family history",
       "Symptom",
       "Negation"
-    ))
+    )
+    categories <- reactiveVal(categories_review)
 
     # Render the checkbox group UI
     output$category_checkboxes <- renderUI({
@@ -882,6 +895,34 @@ loadSupport()
       input$search_col_categorisationTable
     )
 
+    # Update the prompt and categories
+    observeEvent(input$set_prompt_review, {
+      updateTextAreaInput(
+        session,
+        "extra_prompt",
+        value = "For each of the codes, specify whether it should be included in the codelist given the following description of the target codelist: (insert description here)"
+      )
+    updateCheckboxGroupInput(
+      session,
+      "selected_categories",
+      choices = categories_review,
+      selected = categories_review
+    )
+    })
+    observeEvent(input$set_prompt_classify, {
+      updateTextAreaInput(
+        session,
+        "extra_prompt",
+        value = "For each of the following codes, classify it into one of the categories."
+      )
+      updateCheckboxGroupInput(
+        session,
+        "selected_categories",
+        choices = categories_classify,
+        selected = categories_classify
+      )
+    })
+
     # ... or perform classification
     observeEvent(input$classify, {
       req(input$search_col_categorisationTable)
@@ -901,7 +942,7 @@ loadSupport()
       if (model_type == "gemini" && is.null(gemini_chat)) {
         gemini_chat <- ellmer::chat_google_gemini(
           # model = "gemini-2.0-flash",
-          system_prompt = "Classify clinical codes into clinically meaningful categories. Always return the same number of elements as given."
+          system_prompt = "Classify clinical codes into meaningful categories. Always return the same number of elements as given."
         )
       } else if (model_type == "ollama" && is.null(ollama_chat)) {
         req(input$ollama_model_name)
@@ -909,7 +950,7 @@ loadSupport()
           {
             ollama_chat <- ellmer::chat_ollama(
               model = input$ollama_model_name,
-              system_prompt = "Classify clinical codes into clinically meaningful categories. Always return the same number of elements as given."
+              system_prompt = "Classify clinical codes into meaningful categories. Always return the same number of elements as given."
             )
           },
           error = function(e) {
@@ -932,22 +973,34 @@ loadSupport()
       }
 
       # Classify the term
-      showNotification("Classification ongoing", duration=NULL, type="default", id="classify_notification")
+      showNotification("Classification started", duration=NULL, type="default", id="classify_notification")
       temp <- categorisationTable()
       tempcol <- input$search_col_categorisationTable
-      terms <- temp[[tempcol]]
-      result <- active_chat$chat_structured(
-        terms,
-        type = ellmer::type_array(
-          items = ellmer::type_object(
-            name = ellmer::type_string(),
-            category = ellmer::type_enum(
-              "Category",
-              values = input$selected_categories
-            ),
-            explanation = ellmer::type_string()
+      terms <- c(input$extra_prompt, temp[[tempcol]])
+
+      tryCatch(
+        {
+          result <- active_chat$chat_structured(
+            terms,
+            type = ellmer::type_array(
+              items = ellmer::type_object(
+                name = ellmer::type_string(),
+                category = ellmer::type_enum(
+                  "Category",
+                  values = input$selected_categories
+                ),
+                explanation = ellmer::type_string()
+              )
+            )
           )
-        )
+        },
+        error = function(e) {
+          showNotification(
+            paste("Error in LLM API call:", e$message),
+            type = "error"
+          )
+          return(NULL)
+        }
       )
 
       # Update the reactive data
