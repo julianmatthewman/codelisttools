@@ -901,7 +901,7 @@ loadSupport()
       if (model_type == "gemini" && is.null(gemini_chat)) {
         gemini_chat <- ellmer::chat_google_gemini(
           # model = "gemini-2.0-flash",
-          system_prompt = "Classify clinical codes into clinically meaningful categories."
+          system_prompt = "Classify clinical codes into clinically meaningful categories. Always return the same number of elements as given."
         )
       } else if (model_type == "ollama" && is.null(ollama_chat)) {
         req(input$ollama_model_name)
@@ -909,7 +909,7 @@ loadSupport()
           {
             ollama_chat <- ellmer::chat_ollama(
               model = input$ollama_model_name,
-              system_prompt = "Classify clinical codes into clinically meaningful categories."
+              system_prompt = "Classify clinical codes into clinically meaningful categories. Always return the same number of elements as given."
             )
           },
           error = function(e) {
@@ -932,6 +932,7 @@ loadSupport()
       }
 
       # Classify the term
+      showNotification("Classification ongoing", duration=NULL, type="default", id="classify_notification")
       temp <- categorisationTable()
       tempcol <- input$search_col_categorisationTable
       terms <- temp[[tempcol]]
@@ -951,6 +952,7 @@ loadSupport()
 
       # Update the reactive data
       categorisationTable(temp |> dplyr::bind_cols(result)) # Sets the value to the codelist with classification results
+      removeNotification(id="classify_notification")
       showNotification("Classification completed", type="message")
     })
   }
