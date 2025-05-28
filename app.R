@@ -1007,7 +1007,17 @@ loadSupport()
       )
 
       # Update the reactive data
+      tryCatch({
       categorisationTable(temp |> dplyr::bind_cols(result)) # Sets the value to the codelist with classification results
+      },
+      error = function(e) {
+        showNotification(
+          paste("Error merging classification results to codelist.", e$message),
+          type = "error"
+        )
+        categorisationTable(temp)
+      }
+    )
     })
   }
 
