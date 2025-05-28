@@ -204,7 +204,7 @@ loadSupport()
         )
       ),
       tabPanel(
-        "Categorisation",
+        "LLM review",
         sidebarLayout(
           sidebarPanel(
             fluidRow(
@@ -231,7 +231,7 @@ loadSupport()
                 condition = "input.model_choice == 'gemini'",
                 #add text output that says "API key required"
                 helpText(
-                  "To run a Gemini model, an API key is required. Generate an API key at https://aistudio.google.com/app/apikey and save it as GOOGLE_API_KEY=<your_api_key> in your .Renviron file. Restart R to use the API key."
+                  "To run a Gemini model, an API key is required. Generate an API key at https://aistudio.google.com/app/apikey and save it as GOOGLE_API_KEY=<your_api_key> in your .Renviron file. Never share or upload your API key."
                 )
               ),
               fluidRow(
@@ -248,7 +248,8 @@ loadSupport()
               uiOutput("category_checkboxes"),
               textInput("new_category", "Add New Category"),
               actionButton("add_category", "Add Category"),
-              actionButton("classify", "Classify Codes")
+              actionButton("classify", "Classify Codes"),
+              downloadButton("llmdownloadData", "Download"),
             )
           ),
           mainPanel(
@@ -941,7 +942,7 @@ loadSupport()
       # Initialize the appropriate chat model if needed
       if (model_type == "gemini" && is.null(gemini_chat)) {
         gemini_chat <- ellmer::chat_google_gemini(
-          # model = "gemini-2.0-flash",
+          model = "gemini-2.5-flash-preview-05-20",
           system_prompt = "Classify clinical codes into meaningful categories. Always return the same number of elements as given."
         )
       } else if (model_type == "ollama" && is.null(ollama_chat)) {
@@ -973,7 +974,12 @@ loadSupport()
       }
 
       # Classify the term
-      showNotification("Classification started", duration=NULL, type="default", id="classify_notification")
+      showNotification(
+        "Classification started",
+        duration = NULL,
+        type = "default",
+        id = "classify_notification"
+      )
       temp <- categorisationTable()
       tempcol <- input$search_col_categorisationTable
       terms <- c(input$extra_prompt, temp[[tempcol]])
@@ -993,11 +999,11 @@ loadSupport()
               )
             )
           )
-          removeNotification(id="classify_notification")
-          showNotification("Classification completed", type="message")
+          removeNotification(id = "classify_notification")
+          showNotification("Classification completed", type = "message")
         },
         error = function(e) {
-          removeNotification(id="classify_notification")
+          removeNotification(id = "classify_notification")
           showNotification(
             paste("Error in LLM API call:", e$message),
             type = "error"
@@ -1007,17 +1013,31 @@ loadSupport()
       )
 
       # Update the reactive data
-      tryCatch({
-      categorisationTable(temp |> dplyr::bind_cols(result)) # Sets the value to the codelist with classification results
-      },
-      error = function(e) {
-        showNotification(
-          paste("Error merging classification results to codelist.", e$message),
-          type = "error"
-        )
-        categorisationTable(temp)
-      }
-    )
+      tryCatch(
+        {
+          categorisationTable(temp |> dplyr::bind_cols(result)) # Sets the value to the codelist with classification results
+        },
+        error = function(e) {
+          showNotification(
+            paste(
+              "Error merging classification results to codelist.",
+              e$message
+            ),
+            type = "error"
+          )
+          categorisationTable(temp)
+        }
+      )
+
+  # Downloadable csv of selected dataset ----
+  output$llmdownloadData <- downloadHandler(
+    filename = function() {
+      paste("llmreview", ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(categorisationTable(), file, row.names = FALSE)
+    }
+  )
     })
   }
 
