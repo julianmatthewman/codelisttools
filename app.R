@@ -899,10 +899,16 @@ server <- function(input, output, session) {
     if (is.null(inFile)) {
       return(NULL)
     }
+
+    # Sets the value to the codelist from the upload
     categorisationTable(
-      rio::import(inFile$datapath) |>
+      # Import with rio, catching warnings to show as notifications
+      imported <- withCallingHandlers(rio::import(inFile$datapath), warning = function(w) {
+        showNotification(conditionMessage(w), type = "warning")
+        invokeRestart("muffleWarning")
+      }) |>
         dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
-    ) # Sets the value to the codelist from the upload
+    )
   })
 
   output$categorisationTable <- DT::renderDataTable({
