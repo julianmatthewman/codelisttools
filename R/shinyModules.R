@@ -15,7 +15,6 @@ loadTableModule <- function(id, included) {
     # Either get codelist from codelist maker ...
     observeEvent(input$get_codelist, {
       v$thistable <- included()
-
     })
 
     # ... or import from file.
@@ -24,8 +23,20 @@ loadTableModule <- function(id, included) {
       if (is.null(inFile)) {
         return(NULL)
       }
-      v$thistable <- rio::import(inFile$datapath) |> 
-          dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
+
+      # Import with rio, catching warnings to show as notifications
+      imported <- withCallingHandlers(
+        expr = {
+          rio::import(inFile$datapath)
+        },
+        warning = function(w) {
+          showNotification(conditionMessage(w), type = "warning")
+          invokeRestart("muffleWarning")
+        }
+      )
+
+      v$thistable <- imported |>
+        dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
     })
     return(reactive(v$thistable))
   })
@@ -42,10 +53,21 @@ loadTableModule <- function(id, included) {
 #' @return This table rendered with matches to the other table, if one exists, highlighted
 joinRenderTableModule <- function(id, thistable, othertable, matchcolumn) {
   moduleServer(id, function(input, output, session) {
-    # Join tables and identify matches 
+    # Join tables and identify matches
     thistable_joined <- reactive({
-      validate(need(length(intersect(names(thistable()), names(othertable()))) > 0 | is.null(thistable()) | is.null(othertable()), "Tables need at least one matching column"))
-      validate(need(matchcolumn() %in% names(thistable()) | is.null(thistable()) | is.null(othertable()), "Loading"))
+      validate(need(
+        length(intersect(names(thistable()), names(othertable()))) > 0 |
+          is.null(thistable()) |
+          is.null(othertable()),
+        "Tables need at least one matching column"
+      ))
+      validate(need(
+        matchcolumn() %in%
+          names(thistable()) |
+          is.null(thistable()) |
+          is.null(othertable()),
+        "Loading"
+      ))
 
       if (!is.null(thistable()) & !is.null(othertable())) {
         match <- thistable()[[matchcolumn()]] %in% othertable()[[matchcolumn()]]
@@ -56,15 +78,34 @@ joinRenderTableModule <- function(id, thistable, othertable, matchcolumn) {
     })
 
     # Render
-    output$compTable <- DT::renderDataTable({ # Need to use DT::renderDataTable, not from shiny::renderDataTable, when rendering DT::datatable()
-      temp <- DT::datatable(thistable_joined(),
+    output$compTable <- DT::renderDataTable({
+      # Need to use DT::renderDataTable, not from shiny::renderDataTable, when rendering DT::datatable()
+      temp <- DT::datatable(
+        thistable_joined(),
         class = 'nowrap display',
         extensions = "Buttons",
-        options = list(pageLength = 20, scrollX = TRUE, dom = "Bfrtip", buttons = I("colvis"))
+        options = list(
+          pageLength = 20,
+          scrollX = TRUE,
+          dom = "Bfrtip",
+          buttons = I("colvis")
+        )
       )
 
-      if (!is.null(othertable()) & !is.null(thistable()) & ("match" %in% colnames(thistable_joined()))) {
-        temp |> DT::formatStyle("match", target = "row", backgroundColor = DT::styleEqual(c(TRUE, FALSE), c("LightGreen", "LightCoral")))
+      if (
+        !is.null(othertable()) &
+          !is.null(thistable()) &
+          ("match" %in% colnames(thistable_joined()))
+      ) {
+        temp |>
+          DT::formatStyle(
+            "match",
+            target = "row",
+            backgroundColor = DT::styleEqual(
+              c(TRUE, FALSE),
+              c("LightGreen", "LightCoral")
+            )
+          )
       } else {
         temp
       }
@@ -73,18 +114,19 @@ joinRenderTableModule <- function(id, thistable, othertable, matchcolumn) {
 }
 
 
-
 # UI modules ----------------------------------------------------------------------
 
 loadTableModuleUI <- function(id) {
   ns <- shiny::NS(id)
   tagList(
     fluidRow(
-      column(4,
+      column(
+        4,
         style = "margin-top: 25px; margin-bottom: -15px",
         fileInput(ns("import_codelist"), label = NULL)
       ),
-      column(4,
+      column(
+        4,
         style = "margin-top: 25px; margin-bottom: -15px",
         actionButton(ns("get_codelist"), "from codelist maker")
       )
