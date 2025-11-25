@@ -717,21 +717,21 @@ server <- function(input, output, session) {
         included(),
         "codelist.csv",
         row.names = FALSE,
-        quote = FALSE,
+        quote = TRUE,
         na = ""
       )
       utils::write.csv(
         termtable(),
         "terms.csv",
         row.names = FALSE,
-        quote = FALSE,
+        quote = TRUE,
         na = ""
       )
       utils::write.csv(
         excluded(),
         "excluded.csv",
         row.names = FALSE,
-        quote = FALSE,
+        quote = TRUE,
         na = ""
       )
 
