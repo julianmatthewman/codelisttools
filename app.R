@@ -150,12 +150,12 @@ ui <- fluidPage(
       fluidRow(
         column(
           6,
-          htmltools::includeMarkdown("docs/codelist_maker_README.md")
+          htmltools::includeMarkdown("READMEs/codelist_maker_README.md")
         ),
         column(
           6,
-          htmltools::includeMarkdown("docs/codelist_comparison_README.md"),
-          htmltools::includeMarkdown("docs/word_frequency_README.md")
+          htmltools::includeMarkdown("READMEs/codelist_comparison_README.md"),
+          htmltools::includeMarkdown("READMEs/word_frequency_README.md")
         )
       )
     )
