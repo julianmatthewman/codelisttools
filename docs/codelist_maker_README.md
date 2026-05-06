@@ -26,9 +26,7 @@ You will see three tables:
 
 ### Search Rules
 
-#### Default
-
-By default, terms are matched exactly and case-insensitively. 
+Terms are matched exactly and case-insensitively. 
 -   **Regular expressions (regex)** are supported. For example the term _(?=.*fracture)(?=.*hip)_ matches "Hip Fracture" and "Fracture of Hip".
 
 The underlying code takes the DATA and keeps only rows where in the specified COLUMN at least one of the SEARCHTERMS is found and none of the EXCLUSIONTERMS are present. This is implemented using R and dplyr, and can be used in a standalone R script if needed:
@@ -42,19 +40,6 @@ initial <- dplyr::filter(DATA, termsearch(COLUMN, SEARCHTERMS))
 excluded <- dplyr::filter(initial, termsearch(COLUMN, EXCLUSIONTERMS))
 final <- dplyr::setdiff(initial, excluded)
 ```
-
-#### Termset search method
-
-If "Termset search method" is selected, search rules as devised by Williams, R. et al. (2019) are used (this is not optimised for speed here and therefore may be slow when searching large lookup datasets, and the implementation of the search strategy is more complex):
-
--   **Case insensitive.** The term _fracture_ matches "Shoulder fracture" and "Fracture of shoulder".
--   **Words are matched in any order.** The term _shoulder fracture_ matches "Shoulder fracture" and "Fracture of shoulder".
--   **All words must be present.** The term _type 2 diabetes_ matches "Diabetes, type 2" and "History of type 2 diabetes", but not "Type 1 diabetes".
--   **Use quotes to match exactly.** The term _"type 2 diabetes"_ matches "Type 2 diabetes" and "History of type 2 diabetes" but not "Diabetes, type 2".
--   **Wildcards allow partial word searching.** The term _diabet\*_ matches "Diabetes" and "Diabetic patient".
--   **Exact matches are never excluded.** The term _heart failure_ always matches "Heart failure" even if [heart] were excluded.
-
-> Williams, R. et al. (2019) 'Term sets: A transparent and reproducible representation of clinical code sets', PLOS ONE. Edited by I. Olier, 14(2), p. e0212291. Available at: <https://doi.org/10.1371/journal.pone.0212291>.
 
 ### Downloading the codelist
 

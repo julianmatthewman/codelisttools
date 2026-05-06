@@ -37,17 +37,6 @@ ui <- fluidPage(
           textAreaInput("exclusionterms", "Exclusionterms", "insipidus", resize = "vertical"),
           fileInput("import_search_terms", "Import Search Terms", accept = c(".json", ".csv")),
           htmlOutput("select_search_cols"),
-          checkboxInput(
-            "termset_search_method",
-            label = tags$span(
-              "Termset search method",
-              tags$i(
-                class = "glyphicon glyphicon-info-sign",
-                style = "color:#0072B2;",
-                title = 'For search rules see "About" Tab'
-              )
-            )
-          ),
           verbatimTextOutput("randomstrings"),
           hr(),
           downloadButton("downloadData", "Download"),
@@ -293,7 +282,6 @@ server <- function(input, output, session) {
 
   # Get values from input ---------------------------------------------------
 
-  termset_search_method <- reactive(input$termset_search_method)
   descendant_matching <- reactive(input$descendant_matching)
   crosstab <- reactive(input$crosstab)
 
@@ -318,13 +306,13 @@ server <- function(input, output, session) {
   termsearched <- reactive({
     validate(need(cols() %in% names(codebrowser$data), "Loading")) # need to validate to avoid flashing error message, see: https://stackoverflow.com/questions/52378000/temporary-shiny-loading-error-filter-impl
     codebrowser$data |>
-      dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms(), termset_search_method()))
+      dplyr::filter(termsearch(eval(dplyr::sym(cols())), searchterms()))
   })
 
   excluded <- reactive({
     termsearched() |>
       dplyr::filter(
-        termsearch(eval(dplyr::sym(cols())), exclusionterms(), termset_search_method()) &
+        termsearch(eval(dplyr::sym(cols())), exclusionterms()) &
           !(tolower(eval(dplyr::sym(cols()))) %in% tolower(searchterms()))
       ) # This is so exact matches are never excluded. The term [heart failure] always matches "Heart failure" even if [heart] were excluded.
   })
@@ -349,9 +337,17 @@ server <- function(input, output, session) {
       need(nrow(included()) > 0, "Nothing included"),
       need(descendant_matching() == TRUE, message = FALSE)
     )
-    temp <- dplyr::filter(codebrowser$data, stringr::str_starts(eval(dplyr::sym(codecol())), paste(included()[[codecol()]], collapse = "|")))
+    codes <- included()[[codecol()]]
+    browser_col <- codebrowser$data[[codecol()]]
+    codes_by_len <- split(codes, nchar(codes))
+    is_descendant <- rep(FALSE, nrow(codebrowser$data))
+    for (len_chr in names(codes_by_len)) {
+      len <- as.integer(len_chr)
+      is_descendant <- is_descendant | (substr(browser_col, 1, len) %in% codes_by_len[[len_chr]])
+    }
+    temp <- codebrowser$data[is_descendant, ]
     if (length(exclusionterms()) > 0) {
-      temp <- dplyr::filter(temp, !termsearch(eval(dplyr::sym(cols())), exclusionterms(), termset_search_method()))
+      temp <- dplyr::filter(temp, !termsearch(eval(dplyr::sym(cols())), exclusionterms()))
     }
     dplyr::setdiff(temp, included())
   })
@@ -466,17 +462,11 @@ server <- function(input, output, session) {
     searchterms <- searchterms()
     exclusionterms <- exclusionterms()
     searched_in_column <- cols()
-    searchmethod <- ifelse(
-      termset_search_method() == TRUE,
-      "Term sets search method, see 10.1371/journal.pone.0212291",
-      "termsearch <- function(lookup, terms) {stringr::str_detect(lookup, stringr::regex(paste(terms, collapse = '|'), ignore_case = TRUE))}; initial <- dplyr::filter(DATA, termsearch(COLUMN, SEARCHTERMS)); excluded <- dplyr::filter(initial, termsearch(COLUMN, EXCLUSIONTERMS); final <- dplyr::setdiff(inital, excluded)"
-    )
-    n <- max(length(searchterms), length(exclusionterms), length(searched_in_column), length(searchmethod))
+    n <- max(length(searchterms), length(exclusionterms), length(searched_in_column))
     length(searchterms) <- n
     length(exclusionterms) <- n
     length(searched_in_column) <- n
-    length(searchmethod) <- n
-    cbind(searchterms, exclusionterms, searched_in_column, searchmethod)
+    cbind(searchterms, exclusionterms, searched_in_column)
   })
 
   # Make random string to include in filename
@@ -493,15 +483,13 @@ server <- function(input, output, session) {
     },
     content = function(filename) {
       tmpdir <- tempdir()
-      setwd(tempdir())
-      print(tempdir())
 
-      fs <- c("codelist.csv", "terms.csv", "excluded.csv")
-      utils::write.csv(included(), "codelist.csv", row.names = FALSE, quote = TRUE, na = "")
-      utils::write.csv(termtable(), "terms.csv", row.names = FALSE, quote = TRUE, na = "")
-      utils::write.csv(excluded(), "excluded.csv", row.names = FALSE, quote = TRUE, na = "")
+      fs <- file.path(tmpdir, c("codelist.csv", "terms.csv", "excluded.csv"))
+      utils::write.csv(included(), fs[1], row.names = FALSE, quote = TRUE, na = "")
+      utils::write.csv(termtable(), fs[2], row.names = FALSE, quote = TRUE, na = "")
+      utils::write.csv(excluded(), fs[3], row.names = FALSE, quote = TRUE, na = "")
 
-      utils::zip(zipfile = filename, files = fs)
+      zip::zip(zipfile = filename, files = fs, mode = "cherry-pick")
     },
     contentType = "application/zip"
   )
