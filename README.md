@@ -1,6 +1,6 @@
 # codelisttools
 
-[Shiny app](https://julianmatthewman-codelisttools.share.connect.posit.cloud) for making and comparing clinical codelists.
+[Shinylive app](https://julianmatthewman.github.io/codelisttools/) for making and comparing clinical codelists that runs entirely in the browser.
 
 ### Codelist maker
 
